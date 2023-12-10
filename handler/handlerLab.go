@@ -2,7 +2,6 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
-	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +27,37 @@ func (apiCfg *apiConfig) HandlerListLabAll(c *gin.Context) {
 	})
 }
 
+func (apiCfg *apiConfig) HandlerListLabByLabID(c *gin.Context) {
+	var (
+		err error
+	)
+
+	// 获取参数
+	var lab struct {
+		LabID int32 `json:"LabID"`
+	}
+	if err = c.ShouldBindJSON(&lab); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 查询数据库
+	labInfo, err := apiCfg.DB.ListLabById(c.Request.Context(), lab.LabID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 返回数据
+	c.JSON(http.StatusOK, gin.H{
+		"labInfo": labInfo,
+	})
+}
+
 func (apiCfg *apiConfig) HandlerCreateLab(c *gin.Context) {
 	var (
 		err error
@@ -35,10 +65,10 @@ func (apiCfg *apiConfig) HandlerCreateLab(c *gin.Context) {
 
 	// 获取参数
 	var lab struct {
-		Name              string  `json:"Name"`
-		OfficeArea        float64 `json:"OfficeArea"`
-		Address           string  `json:"Address"`
-		ResearchDirection string  `json:"ResearchDirection"`
+		Name              string  `json:"name"`
+		OfficeArea        float64 `json:"office_area"`
+		Address           string  `json:"address"`
+		ResearchDirection string  `json:"research_direction"`
 	}
 	if err = c.ShouldBindJSON(&lab); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -49,19 +79,10 @@ func (apiCfg *apiConfig) HandlerCreateLab(c *gin.Context) {
 
 	// 插入数据库
 	labID, err := apiCfg.DB.CreateLab(c.Request.Context(), database.CreateLabParams{
-		Name: lab.Name,
-		Officearea: sql.NullFloat64{
-			Float64: lab.OfficeArea,
-			Valid:   true,
-		},
-		Address: sql.NullString{
-			String: lab.Address,
-			Valid:  true,
-		},
-		Researchdirection: sql.NullString{
-			String: lab.ResearchDirection,
-			Valid:  true,
-		},
+		Name:              lab.Name,
+		OfficeArea:        lab.OfficeArea,
+		Address:           lab.Address,
+		ResearchDirection: lab.ResearchDirection,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -118,7 +139,7 @@ func (apiCfg *apiConfig) HandlerUpdateLab(c *gin.Context) {
 		OfficeArea        float64 `json:"OfficeArea"`
 		Address           string  `json:"Address"`
 		ResearchDirection string  `json:"ResearchDirection"`
-		LabID             int     `json:"LabID"`
+		LabID             int32   `json:"LabID"`
 	}
 	if err = c.ShouldBindJSON(&lab); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -129,20 +150,11 @@ func (apiCfg *apiConfig) HandlerUpdateLab(c *gin.Context) {
 
 	// 更新数据库
 	labInfo, err := apiCfg.DB.UpdateLab(c.Request.Context(), database.UpdateLabParams{
-		Name: lab.Name,
-		Officearea: sql.NullFloat64{
-			Float64: lab.OfficeArea,
-			Valid:   true,
-		},
-		Address: sql.NullString{
-			String: lab.Address,
-			Valid:  true,
-		},
-		Researchdirection: sql.NullString{
-			String: lab.ResearchDirection,
-			Valid:  true,
-		},
-		Labid: int32(lab.LabID),
+		Name:              lab.Name,
+		OfficeArea:        lab.OfficeArea,
+		Address:           lab.Address,
+		ResearchDirection: lab.ResearchDirection,
+		LabID:             lab.LabID,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -187,128 +199,3 @@ func (apiCfg *apiConfig) HandlerHealthzDatabase(c *gin.Context) {
 //     FOREIGN KEY (DirectorID) REFERENCES Researchers(ResearcherID),
 //     FOREIGN KEY (LabID) REFERENCES Laboratories(LabID)
 // );
-
-func (apiCfg *apiConfig) HandlerListDirectorAll(c *gin.Context) {
-	var (
-		err error
-	)
-
-	// 查询数据库
-	directorList, err := apiCfg.DB.ListDirectorAll(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 返回数据
-	c.JSON(http.StatusOK, gin.H{
-		"directorList": directorList,
-	})
-}
-
-func (apiCfg *apiConfig) HandlerCreateDirector(c *gin.Context) {
-	var (
-		err error
-	)
-
-	// 获取参数
-	var director struct {
-		DirectorID int `json:"DirectorID"`
-		LabID      int `json:"LabID"`
-		Term       int `json:"Term"`
-	}
-	if err = c.ShouldBindJSON(&director); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 插入数据库
-	directorID, err := apiCfg.DB.CreateDirector(c.Request.Context(), database.CreateDirectorParams{
-		Directorid: int32(director.DirectorID),
-		Labid:      int32(director.LabID),
-		Term:       int32(director.Term),
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 返回数据
-	c.JSON(http.StatusOK, gin.H{
-		"directorID": directorID,
-	})
-}
-
-func (apiCfg *apiConfig) HandlerDeleteDirector(c *gin.Context) {
-	var (
-		err error
-	)
-
-	// 获取参数
-	var director struct {
-		DirectorID int `json:"DirectorID"`
-	}
-	if err = c.ShouldBindJSON(&director); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 删除数据库
-	directorInfo, err := apiCfg.DB.DeleteDirector(c.Request.Context(), int32(director.DirectorID))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 返回数据
-	c.JSON(http.StatusOK, gin.H{
-		"directorInfo": directorInfo,
-	})
-}
-
-func (apiCfg *apiConfig) HandlerUpdateDirector(c *gin.Context) {
-	var (
-		err error
-	)
-
-	// 获取参数
-	var director struct {
-		DirectorID int `json:"DirectorID"`
-		LabID      int `json:"LabID"`
-		Term       int `json:"Term"`
-	}
-	if err = c.ShouldBindJSON(&director); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 更新数据库
-	directorInfo, err := apiCfg.DB.UpdateDirector(c.Request.Context(), database.UpdateDirectorParams{
-		Directorid: int32(director.DirectorID),
-		Labid:      int32(director.LabID),
-		Term:       int32(director.Term),
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// 返回数据
-	c.JSON(http.StatusOK, gin.H{
-		"directorInfo": directorInfo,
-	})
-}

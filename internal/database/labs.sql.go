@@ -7,48 +7,46 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createLab = `-- name: CreateLab :one
-INSERT INTO Laboratories (Name, OfficeArea, Address, ResearchDirection) VALUES ($1, $2, $3, $4) 
-RETURNING LabID
+INSERT INTO Laboratories (Name, office_area, Address, research_direction) VALUES ($1, $2, $3, $4) 
+RETURNING lab_id
 `
 
 type CreateLabParams struct {
 	Name              string
-	Officearea        float64
+	OfficeArea        float64
 	Address           string
-	Researchdirection sql.NullString
+	ResearchDirection string
 }
 
 func (q *Queries) CreateLab(ctx context.Context, arg CreateLabParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createLab,
 		arg.Name,
-		arg.Officearea,
+		arg.OfficeArea,
 		arg.Address,
-		arg.Researchdirection,
+		arg.ResearchDirection,
 	)
-	var labid int32
-	err := row.Scan(&labid)
-	return labid, err
+	var lab_id int32
+	err := row.Scan(&lab_id)
+	return lab_id, err
 }
 
 const deleteLab = `-- name: DeleteLab :one
-DELETE FROM Laboratories WHERE LabID = $1
-RETURNING labid, name, directorid, officearea, address, researchdirection
+DELETE FROM Laboratories WHERE lab_id = $1
+RETURNING lab_id, name, office_area, address, research_direction
 `
 
-func (q *Queries) DeleteLab(ctx context.Context, labid int32) (Laboratory, error) {
-	row := q.db.QueryRowContext(ctx, deleteLab, labid)
+func (q *Queries) DeleteLab(ctx context.Context, labID int32) (Laboratory, error) {
+	row := q.db.QueryRowContext(ctx, deleteLab, labID)
 	var i Laboratory
 	err := row.Scan(
-		&i.Labid,
+		&i.LabID,
 		&i.Name,
-		&i.Directorid,
-		&i.Officearea,
+		&i.OfficeArea,
 		&i.Address,
-		&i.Researchdirection,
+		&i.ResearchDirection,
 	)
 	return i, err
 }
@@ -64,26 +62,49 @@ func (q *Queries) HealthzDatabase(ctx context.Context) (string, error) {
 	return version, err
 }
 
+const listDirectorByLab = `-- name: ListDirectorByLab :one
+SELECT researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE lab_id = $1 AND Leader = true
+`
+
+func (q *Queries) ListDirectorByLab(ctx context.Context, labID int32) (Researcher, error) {
+	row := q.db.QueryRowContext(ctx, listDirectorByLab, labID)
+	var i Researcher
+	err := row.Scan(
+		&i.Researcherid,
+		&i.LabID,
+		&i.Researchnumber,
+		&i.Name,
+		&i.Gender,
+		&i.Title,
+		&i.Age,
+		&i.Emailaddress,
+		&i.Leader,
+		&i.Startdate,
+		&i.Term,
+		&i.Researchdirection,
+	)
+	return i, err
+}
+
 const listLab = `-- name: ListLab :one
-SELECT labid, name, directorid, officearea, address, researchdirection FROM Laboratories WHERE Name = $1
+SELECT lab_id, name, office_area, address, research_direction FROM laboratories WHERE Name = $1
 `
 
 func (q *Queries) ListLab(ctx context.Context, name string) (Laboratory, error) {
 	row := q.db.QueryRowContext(ctx, listLab, name)
 	var i Laboratory
 	err := row.Scan(
-		&i.Labid,
+		&i.LabID,
 		&i.Name,
-		&i.Directorid,
-		&i.Officearea,
+		&i.OfficeArea,
 		&i.Address,
-		&i.Researchdirection,
+		&i.ResearchDirection,
 	)
 	return i, err
 }
 
 const listLabAll = `-- name: ListLabAll :many
-SELECT labid, name, directorid, officearea, address, researchdirection FROM Laboratories
+SELECT lab_id, name, office_area, address, research_direction FROM Laboratories
 `
 
 func (q *Queries) ListLabAll(ctx context.Context) ([]Laboratory, error) {
@@ -96,12 +117,11 @@ func (q *Queries) ListLabAll(ctx context.Context) ([]Laboratory, error) {
 	for rows.Next() {
 		var i Laboratory
 		if err := rows.Scan(
-			&i.Labid,
+			&i.LabID,
 			&i.Name,
-			&i.Directorid,
-			&i.Officearea,
+			&i.OfficeArea,
 			&i.Address,
-			&i.Researchdirection,
+			&i.ResearchDirection,
 		); err != nil {
 			return nil, err
 		}
@@ -116,35 +136,84 @@ func (q *Queries) ListLabAll(ctx context.Context) ([]Laboratory, error) {
 	return items, nil
 }
 
+const listLabById = `-- name: ListLabById :one
+SELECT lab_id, name, office_area, address, research_direction FROM laboratories WHERE lab_id = $1
+`
+
+func (q *Queries) ListLabById(ctx context.Context, labID int32) (Laboratory, error) {
+	row := q.db.QueryRowContext(ctx, listLabById, labID)
+	var i Laboratory
+	err := row.Scan(
+		&i.LabID,
+		&i.Name,
+		&i.OfficeArea,
+		&i.Address,
+		&i.ResearchDirection,
+	)
+	return i, err
+}
+
+const listOfficeByLab = `-- name: ListOfficeByLab :one
+SELECT officeid, lab_id, area, address, managerid FROM Offices WHERE lab_id = $1
+`
+
+func (q *Queries) ListOfficeByLab(ctx context.Context, labID int32) (Office, error) {
+	row := q.db.QueryRowContext(ctx, listOfficeByLab, labID)
+	var i Office
+	err := row.Scan(
+		&i.Officeid,
+		&i.LabID,
+		&i.Area,
+		&i.Address,
+		&i.Managerid,
+	)
+	return i, err
+}
+
+const listSecretaryByLab = `-- name: ListSecretaryByLab :one
+SELECT secretaryid, lab_id, employmentdate, responsibilities FROM SecretaryServices WHERE lab_id = $1
+`
+
+func (q *Queries) ListSecretaryByLab(ctx context.Context, labID int32) (Secretaryservice, error) {
+	row := q.db.QueryRowContext(ctx, listSecretaryByLab, labID)
+	var i Secretaryservice
+	err := row.Scan(
+		&i.Secretaryid,
+		&i.LabID,
+		&i.Employmentdate,
+		&i.Responsibilities,
+	)
+	return i, err
+}
+
 const updateLab = `-- name: UpdateLab :one
-UPDATE Laboratories SET Name = $1, OfficeArea = $2, Address = $3, ResearchDirection = $4 WHERE LabID = $5
-RETURNING labid, name, directorid, officearea, address, researchdirection
+UPDATE Laboratories SET Name = $1, office_area = $2, Address = $3, research_direction = $4 WHERE lab_id = $5
+RETURNING lab_id, name, office_area, address, research_direction
 `
 
 type UpdateLabParams struct {
 	Name              string
-	Officearea        float64
+	OfficeArea        float64
 	Address           string
-	Researchdirection sql.NullString
-	Labid             int32
+	ResearchDirection string
+	LabID             int32
 }
 
 func (q *Queries) UpdateLab(ctx context.Context, arg UpdateLabParams) (Laboratory, error) {
 	row := q.db.QueryRowContext(ctx, updateLab,
 		arg.Name,
-		arg.Officearea,
+		arg.OfficeArea,
 		arg.Address,
-		arg.Researchdirection,
-		arg.Labid,
+		arg.ResearchDirection,
+		arg.LabID,
 	)
 	var i Laboratory
 	err := row.Scan(
-		&i.Labid,
+		&i.LabID,
 		&i.Name,
-		&i.Directorid,
-		&i.Officearea,
+		&i.OfficeArea,
 		&i.Address,
-		&i.Researchdirection,
+		&i.ResearchDirection,
 	)
 	return i, err
 }

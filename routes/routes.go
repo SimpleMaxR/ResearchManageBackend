@@ -27,6 +27,7 @@ func Init() {
 
 	// Lab 相关接口
 	router.GET("/listLabAll", apiCfg.HandlerListLabAll)
+	router.GET("/listLabByLabID", apiCfg.HandlerListLabByLabID)
 	router.POST("/createLab", apiCfg.HandlerCreateLab)
 	router.GET("/healthzDatabase", apiCfg.HandlerHealthzDatabase)
 	router.DELETE("/deleteLab", apiCfg.HandlerDeleteLab)

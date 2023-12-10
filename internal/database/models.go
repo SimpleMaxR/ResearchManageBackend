@@ -39,13 +39,6 @@ type Contact struct {
 	Baseqm       sql.NullInt32
 }
 
-type Director struct {
-	Directorid int32
-	Labid      int32
-	Startdate  time.Time
-	Term       int32
-}
-
 type Equipment struct {
 	Equipmentid  int32
 	Name         string
@@ -62,12 +55,11 @@ type Equipmentreservation struct {
 }
 
 type Laboratory struct {
-	Labid             int32
+	LabID             int32
 	Name              string
-	Directorid        int32
-	Officearea        float64
+	OfficeArea        float64
 	Address           string
-	Researchdirection sql.NullString
+	ResearchDirection string
 }
 
 type Leader struct {
@@ -80,7 +72,7 @@ type Leader struct {
 
 type Office struct {
 	Officeid  int32
-	Labid     int32
+	LabID     int32
 	Area      float64
 	Address   string
 	Managerid int32
@@ -143,15 +135,17 @@ type Qualitymonitor struct {
 
 type Researcher struct {
 	Researcherid      int32
-	Labid             int32
+	LabID             int32
 	Researchnumber    int32
 	Name              string
 	Gender            string
 	Title             string
 	Age               int32
 	Emailaddress      string
-	Researchdirection string
 	Leader            bool
+	Startdate         sql.NullTime
+	Term              sql.NullInt32
+	Researchdirection string
 }
 
 type Secretary struct {
@@ -165,7 +159,7 @@ type Secretary struct {
 
 type Secretaryservice struct {
 	Secretaryid      int32
-	Labid            int32
+	LabID            int32
 	Employmentdate   time.Time
 	Responsibilities string
 }

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
-	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -53,19 +52,14 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 
 	// 插入数据库
 	id, err := apiCfg.DB.CreateResearcher(c.Request.Context(), database.CreateResearcherParams{
-		Labid: sql.NullInt32{
-			Int32: int32(researcherInfo.LabID),
-			Valid: true,
-		},
-		Name:   researcherInfo.Name,
-		Gender: researcherInfo.Gender,
-		Title:  researcherInfo.Title,
-		Age:    researcherInfo.Age,
-		Researchdirection: sql.NullString{
-			String: researcherInfo.Researchdirection,
-			Valid:  true,
-		},
-		Leader: researcherInfo.Leader})
+		LabID:             researcherInfo.LabID,
+		Name:              researcherInfo.Name,
+		Gender:            researcherInfo.Gender,
+		Title:             researcherInfo.Title,
+		Age:               researcherInfo.Age,
+		Researchdirection: researcherInfo.Researchdirection,
+		Leader:            researcherInfo.Leader,
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -135,19 +129,14 @@ func (apiCfg *apiConfig) HandlerUpdateResearcher(c *gin.Context) {
 
 	// 更新数据库
 	researcher, err := apiCfg.DB.UpdateResearcher(c.Request.Context(), database.UpdateResearcherParams{
-		Labid: sql.NullInt32{
-			Int32: int32(researcherInfo.LabID),
-			Valid: true,
-		},
-		Name:   researcherInfo.Name,
-		Gender: researcherInfo.Gender,
-		Title:  researcherInfo.Title,
-		Age:    researcherInfo.Age,
-		Researchdirection: sql.NullString{
-			String: researcherInfo.Researchdirection,
-			Valid:  true,
-		},
-		Leader: researcherInfo.Leader})
+		LabID:             researcherInfo.LabID,
+		Name:              researcherInfo.Name,
+		Gender:            researcherInfo.Gender,
+		Title:             researcherInfo.Title,
+		Age:               researcherInfo.Age,
+		Researchdirection: researcherInfo.Researchdirection,
+		Leader:            researcherInfo.Leader,
+	})
 
 	// 返回数据
 	if err != nil {
@@ -170,7 +159,7 @@ func (apiCfg *apiConfig) HandlerListResearcherByLab(c *gin.Context) {
 
 	// 获取参数
 	var lab struct {
-		LabID int `json:"LabID"`
+		LabID int32 `json:"LabID"`
 	}
 	if err = c.ShouldBindJSON(&lab); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -180,10 +169,7 @@ func (apiCfg *apiConfig) HandlerListResearcherByLab(c *gin.Context) {
 	}
 
 	// 查询数据库
-	researcherList, err := apiCfg.DB.ListResearcherByLab(c.Request.Context(), sql.NullInt32{
-		Int32: int32(lab.LabID),
-		Valid: true,
-	})
+	researcherList, err := apiCfg.DB.ListResearcherByLab(c.Request.Context(), lab.LabID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

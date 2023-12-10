@@ -15,17 +15,20 @@ type JWT struct {
 	JwtKey []byte
 }
 
+// 创建 JWT 实例
 func NewJWT() *JWT {
 	return &JWT{
 		[]byte(utils.JwtKey),
 	}
 }
 
+// JwtKey 加密秘钥 (string)
 var JwtKey = []byte(utils.JwtKey)
 
+// Claims token 结构体
 type Claims struct {
-	Userid string `json:"userid"`
-	Role   int    `json:"role"`
+	Userid int32 `json:"userid"`
+	Role   int32 `json:"roleid"`
 	jwt.StandardClaims
 }
 
@@ -89,7 +92,15 @@ func (j *JWT) ParserToken(tokenString string) (*jwt.Token, *Claims, error) {
 	return nil, nil, TokenInvalid
 }
 
-// JwtTokenTeacher 中间键
+// JwtToken 鉴权
+func JwtToken() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		// token := context.Request.Header.Get("Authorization")
+		context.Next()
+	}
+}
+
+// JwtTokenTeacher 鉴定
 func JwtTokenTeacher() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var code int
