@@ -6,49 +6,51 @@ package database
 
 import (
 	"database/sql"
-
-	"github.com/google/uuid"
+	"time"
 )
 
 type Achievement struct {
 	Achievementid int32
 	Name          string
-	Obtaineddate  sql.NullTime
-	Contributorid sql.NullInt32
-	Rank          sql.NullInt32
+	Obtaineddate  time.Time
+	Contributorid int32
+	Baseproject   int32
+	Basesubtopic  sql.NullInt32
+	Rank          int32
 }
 
 type Client struct {
-	Clientid            int32
-	Name                string
-	Address             sql.NullString
-	Responsiblepersonid sql.NullInt32
-	Contactpersonid     sql.NullInt32
-	Officephone         sql.NullString
-	Mobilephone         sql.NullString
-	Email               sql.NullString
+	Clientid int32
+	Name     string
+	Address  string
+	// 委托方负责人
+	Leaderid    int32
+	Officephone string
 }
 
-type Coworker struct {
-	Coworkerid   int32
+type Contact struct {
+	Contactid    int32
 	Name         string
-	Officephone  sql.NullString
-	Mobilephone  sql.NullString
-	Emailaddress sql.NullString
+	Officephone  string
+	Mobilephone  string
+	Emailaddress string
+	Baseclient   sql.NullInt32
+	Basepartners sql.NullInt32
+	Baseqm       sql.NullInt32
 }
 
 type Director struct {
 	Directorid int32
-	Labid      sql.NullInt32
-	Startdate  sql.NullTime
-	Term       sql.NullInt32
+	Labid      int32
+	Startdate  time.Time
+	Term       int32
 }
 
 type Equipment struct {
 	Equipmentid  int32
 	Name         string
 	Purchasedate sql.NullTime
-	Status       sql.NullString
+	Available    bool
 }
 
 type Equipmentreservation struct {
@@ -62,16 +64,26 @@ type Equipmentreservation struct {
 type Laboratory struct {
 	Labid             int32
 	Name              string
-	Officearea        sql.NullFloat64
-	Address           sql.NullString
+	Directorid        int32
+	Officearea        float64
+	Address           string
 	Researchdirection sql.NullString
 }
 
+type Leader struct {
+	Leaderid     int32
+	Name         string
+	Officephone  sql.NullString
+	Mobilephone  sql.NullString
+	Emailaddress sql.NullString
+}
+
 type Office struct {
-	Officeid int32
-	Labid    sql.NullInt32
-	Area     sql.NullFloat64
-	Address  sql.NullString
+	Officeid  int32
+	Labid     int32
+	Area      float64
+	Address   string
+	Managerid int32
 }
 
 type Paper struct {
@@ -79,30 +91,29 @@ type Paper struct {
 }
 
 type Partner struct {
-	Partnerid           int32
-	Name                string
-	Address             sql.NullString
-	Responsiblepersonid sql.NullInt32
-	Contactperson       sql.NullString
-	Officephone         sql.NullString
-	Mobilephone         sql.NullString
-	Email               sql.NullString
+	Partnerid int32
+	Name      string
+	Address   string
+	// 合作方负责人
+	Leaderid    int32
+	Officephone string
 }
 
 type Patent struct {
 	Patentid int32
-	Type     sql.NullString
+	Type     string
 }
 
 type Project struct {
-	Projectid       int32
-	Leaderid        sql.NullInt32
-	Name            string
-	Researchcontent sql.NullString
-	Totalfunds      sql.NullFloat64
-	Startdate       sql.NullTime
-	Enddate         sql.NullTime
-	Clientid        sql.NullInt32
+	Projectid         int32
+	Peojectleader     int32
+	Name              string
+	Researchcontent   sql.NullString
+	Totalfunds        float64
+	Startdate         time.Time
+	Enddate           time.Time
+	Qualitymonitorsid int32
+	Clientid          int32
 }
 
 type Projectachievement struct {
@@ -111,55 +122,52 @@ type Projectachievement struct {
 }
 
 type Projectpartner struct {
-	Projectid           int32
-	Partnerid           int32
-	Responsiblepersonid sql.NullInt32
+	Projectid int32
+	Partnerid int32
 }
 
 type Projectresearcher struct {
 	Projectid       int32
 	Researcherid    int32
-	Joindate        sql.NullTime
-	Workload        sql.NullFloat64
-	Disposablefunds sql.NullFloat64
+	Joindate        time.Time
+	Workload        float64
+	Disposablefunds float64
 }
 
 type Qualitymonitor struct {
-	Monitorid         int32
-	Name              string
-	Address           sql.NullString
-	Responsibleperson sql.NullString
-	Contactpersonid   sql.NullInt32
+	Monitorid int32
+	Name      string
+	Address   string
+	Leaderid  int32
 }
 
 type Researcher struct {
 	Researcherid      int32
-	Labid             sql.NullInt32
+	Labid             int32
+	Researchnumber    int32
 	Name              string
 	Gender            string
 	Title             string
 	Age               int32
-	Researchdirection sql.NullString
+	Emailaddress      string
+	Researchdirection string
 	Leader            bool
 }
 
-type Role struct {
-	Roleid   int32
-	Rolename string
-}
-
 type Secretary struct {
-	Secretaryid      int32
-	Name             string
-	Gender           sql.NullString
-	Age              sql.NullInt32
-	Employmentdate   sql.NullTime
-	Responsibilities sql.NullString
+	Secretaryid  int32
+	Name         string
+	Gender       string
+	Age          int32
+	Mobilephone  string
+	Emailaddress string
 }
 
 type Secretaryservice struct {
-	Secretaryid int32
-	Labid       int32
+	Secretaryid      int32
+	Labid            int32
+	Employmentdate   time.Time
+	Responsibilities string
 }
 
 type Softwareright struct {
@@ -167,22 +175,18 @@ type Softwareright struct {
 }
 
 type Subtopic struct {
-	Subtopicid          int32
-	Projectid           sql.NullInt32
-	Leaderid            sql.NullInt32
-	Enddaterequirement  sql.NullTime
-	Disposablefunds     sql.NullFloat64
-	Technicalindicators sql.NullString
+	Subtopicid int32
+	Projectid  int32
+	Leaderid   int32
+	// DDL日期
+	Enddaterequirement  time.Time
+	Disposablefunds     float64
+	Technicalindicators string
 }
 
 type User struct {
-	Userid   uuid.UUID
+	Userid   int32
 	Username string
 	Password string
-	Email    sql.NullString
-}
-
-type Userrole struct {
-	Userid uuid.UUID
-	Roleid int32
+	Roleid   int32
 }

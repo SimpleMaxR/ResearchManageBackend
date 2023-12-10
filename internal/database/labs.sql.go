@@ -17,8 +17,8 @@ RETURNING LabID
 
 type CreateLabParams struct {
 	Name              string
-	Officearea        sql.NullFloat64
-	Address           sql.NullString
+	Officearea        float64
+	Address           string
 	Researchdirection sql.NullString
 }
 
@@ -36,7 +36,7 @@ func (q *Queries) CreateLab(ctx context.Context, arg CreateLabParams) (int32, er
 
 const deleteLab = `-- name: DeleteLab :one
 DELETE FROM Laboratories WHERE LabID = $1
-RETURNING labid, name, officearea, address, researchdirection
+RETURNING labid, name, directorid, officearea, address, researchdirection
 `
 
 func (q *Queries) DeleteLab(ctx context.Context, labid int32) (Laboratory, error) {
@@ -45,6 +45,7 @@ func (q *Queries) DeleteLab(ctx context.Context, labid int32) (Laboratory, error
 	err := row.Scan(
 		&i.Labid,
 		&i.Name,
+		&i.Directorid,
 		&i.Officearea,
 		&i.Address,
 		&i.Researchdirection,
@@ -64,7 +65,7 @@ func (q *Queries) HealthzDatabase(ctx context.Context) (string, error) {
 }
 
 const listLab = `-- name: ListLab :one
-SELECT labid, name, officearea, address, researchdirection FROM Laboratories WHERE Name = $1
+SELECT labid, name, directorid, officearea, address, researchdirection FROM Laboratories WHERE Name = $1
 `
 
 func (q *Queries) ListLab(ctx context.Context, name string) (Laboratory, error) {
@@ -73,6 +74,7 @@ func (q *Queries) ListLab(ctx context.Context, name string) (Laboratory, error) 
 	err := row.Scan(
 		&i.Labid,
 		&i.Name,
+		&i.Directorid,
 		&i.Officearea,
 		&i.Address,
 		&i.Researchdirection,
@@ -81,7 +83,7 @@ func (q *Queries) ListLab(ctx context.Context, name string) (Laboratory, error) 
 }
 
 const listLabAll = `-- name: ListLabAll :many
-SELECT labid, name, officearea, address, researchdirection FROM Laboratories
+SELECT labid, name, directorid, officearea, address, researchdirection FROM Laboratories
 `
 
 func (q *Queries) ListLabAll(ctx context.Context) ([]Laboratory, error) {
@@ -96,6 +98,7 @@ func (q *Queries) ListLabAll(ctx context.Context) ([]Laboratory, error) {
 		if err := rows.Scan(
 			&i.Labid,
 			&i.Name,
+			&i.Directorid,
 			&i.Officearea,
 			&i.Address,
 			&i.Researchdirection,
@@ -115,13 +118,13 @@ func (q *Queries) ListLabAll(ctx context.Context) ([]Laboratory, error) {
 
 const updateLab = `-- name: UpdateLab :one
 UPDATE Laboratories SET Name = $1, OfficeArea = $2, Address = $3, ResearchDirection = $4 WHERE LabID = $5
-RETURNING labid, name, officearea, address, researchdirection
+RETURNING labid, name, directorid, officearea, address, researchdirection
 `
 
 type UpdateLabParams struct {
 	Name              string
-	Officearea        sql.NullFloat64
-	Address           sql.NullString
+	Officearea        float64
+	Address           string
 	Researchdirection sql.NullString
 	Labid             int32
 }
@@ -138,6 +141,7 @@ func (q *Queries) UpdateLab(ctx context.Context, arg UpdateLabParams) (Laborator
 	err := row.Scan(
 		&i.Labid,
 		&i.Name,
+		&i.Directorid,
 		&i.Officearea,
 		&i.Address,
 		&i.Researchdirection,

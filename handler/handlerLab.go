@@ -255,7 +255,7 @@ func (apiCfg *apiConfig) HandlerDeleteDirector(c *gin.Context) {
 		DirectorID int `json:"DirectorID"`
 	}
 	if err = c.ShouldBindJSON(&director); err != nil {
-		c.J/*  */SON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
