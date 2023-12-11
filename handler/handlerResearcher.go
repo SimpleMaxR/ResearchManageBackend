@@ -2,6 +2,8 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
+	"ResearchManage/utils"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,12 +37,16 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 	// 解析参数
 	var researcherInfo struct {
 		LabID             int32  `json:"LabId" binding:"required"`
+		ResearcherNumber  string `json:"ResearcherNumber" binding:"required"`
 		Name              string `json:"Name" binding:"required"`
 		Gender            string `json:"Gender" binding:"required"`
 		Title             string `json:"Title" binding:"required"`
 		Age               int32  `json:"Age" binding:"required"`
-		Researchdirection string `json:"Researchdirection"`
+		Email             string `json:"Email" binding:"required"`
 		Leader            bool   `json:"Leader" binding:"required"`
+		StartDate         string `json:"StartDate"`
+		Term              int32  `json:"Term"`
+		Researchdirection string `json:"Researchdirection"`
 	}
 
 	if err = c.ShouldBindJSON(&researcherInfo); err != nil {
@@ -52,13 +58,23 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 
 	// 插入数据库
 	id, err := apiCfg.DB.CreateResearcher(c.Request.Context(), database.CreateResearcherParams{
-		LabID:             researcherInfo.LabID,
-		Name:              researcherInfo.Name,
-		Gender:            researcherInfo.Gender,
-		Title:             researcherInfo.Title,
-		Age:               researcherInfo.Age,
+		LabID:            researcherInfo.LabID,
+		ResearcherNumber: researcherInfo.ResearcherNumber,
+		Name:             researcherInfo.Name,
+		Gender:           researcherInfo.Gender,
+		Title:            researcherInfo.Title,
+		Age:              researcherInfo.Age,
+		Emailaddress:     researcherInfo.Email,
+		Leader:           researcherInfo.Leader,
+		Startdate: sql.NullTime{
+			Time:  utils.StringToTime(researcherInfo.StartDate),
+			Valid: researcherInfo.Leader,
+		},
+		Term: sql.NullInt32{
+			Int32: researcherInfo.Term,
+			Valid: researcherInfo.Leader,
+		},
 		Researchdirection: researcherInfo.Researchdirection,
-		Leader:            researcherInfo.Leader,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

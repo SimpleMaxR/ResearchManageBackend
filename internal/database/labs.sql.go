@@ -63,7 +63,7 @@ func (q *Queries) HealthzDatabase(ctx context.Context) (string, error) {
 }
 
 const listDirectorByLab = `-- name: ListDirectorByLab :one
-SELECT researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE lab_id = $1 AND Leader = true
+SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE lab_id = $1 AND Leader = true
 `
 
 func (q *Queries) ListDirectorByLab(ctx context.Context, labID int32) (Researcher, error) {
@@ -72,7 +72,7 @@ func (q *Queries) ListDirectorByLab(ctx context.Context, labID int32) (Researche
 	err := row.Scan(
 		&i.Researcherid,
 		&i.LabID,
-		&i.Researchnumber,
+		&i.ResearcherNumber,
 		&i.Name,
 		&i.Gender,
 		&i.Title,

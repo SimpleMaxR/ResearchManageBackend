@@ -7,33 +7,42 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
 const createResearcher = `-- name: CreateResearcher :one
-INSERT INTO Researchers (lab_id, Name, Gender, Title, Age, ResearchDirection, Leader) VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO Researchers (lab_id, researcher_number, Name, Gender, Title, Age, emailaddress, Leader, startdate, term, researchDirection) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING ResearcherID
 `
 
 type CreateResearcherParams struct {
 	LabID             int32
+	ResearcherNumber  string
 	Name              string
 	Gender            string
 	Title             string
 	Age               int32
-	Researchdirection string
+	Emailaddress      string
 	Leader            bool
+	Startdate         sql.NullTime
+	Term              sql.NullInt32
+	Researchdirection string
 }
 
 func (q *Queries) CreateResearcher(ctx context.Context, arg CreateResearcherParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createResearcher,
 		arg.LabID,
+		arg.ResearcherNumber,
 		arg.Name,
 		arg.Gender,
 		arg.Title,
 		arg.Age,
-		arg.Researchdirection,
+		arg.Emailaddress,
 		arg.Leader,
+		arg.Startdate,
+		arg.Term,
+		arg.Researchdirection,
 	)
 	var researcherid int32
 	err := row.Scan(&researcherid)
@@ -97,7 +106,7 @@ func (q *Queries) CreateSecretaryServices(ctx context.Context, arg CreateSecreta
 
 const deleteResearcher = `-- name: DeleteResearcher :one
 DELETE FROM Researchers WHERE ResearcherID = $1
-RETURNING researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection
+RETURNING researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection
 `
 
 func (q *Queries) DeleteResearcher(ctx context.Context, researcherid int32) (Researcher, error) {
@@ -106,7 +115,7 @@ func (q *Queries) DeleteResearcher(ctx context.Context, researcherid int32) (Res
 	err := row.Scan(
 		&i.Researcherid,
 		&i.LabID,
-		&i.Researchnumber,
+		&i.ResearcherNumber,
 		&i.Name,
 		&i.Gender,
 		&i.Title,
@@ -144,7 +153,7 @@ func (q *Queries) DeleteSecretaryService(ctx context.Context, arg DeleteSecretar
 }
 
 const listResearcher = `-- name: ListResearcher :one
-SELECT researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE ResearcherID = $1
+SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE ResearcherID = $1
 `
 
 func (q *Queries) ListResearcher(ctx context.Context, researcherid int32) (Researcher, error) {
@@ -153,7 +162,7 @@ func (q *Queries) ListResearcher(ctx context.Context, researcherid int32) (Resea
 	err := row.Scan(
 		&i.Researcherid,
 		&i.LabID,
-		&i.Researchnumber,
+		&i.ResearcherNumber,
 		&i.Name,
 		&i.Gender,
 		&i.Title,
@@ -169,7 +178,7 @@ func (q *Queries) ListResearcher(ctx context.Context, researcherid int32) (Resea
 
 const listResearcherAll = `-- name: ListResearcherAll :many
 
-SELECT researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers
+SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers
 `
 
 // Researcher queries
@@ -185,7 +194,7 @@ func (q *Queries) ListResearcherAll(ctx context.Context) ([]Researcher, error) {
 		if err := rows.Scan(
 			&i.Researcherid,
 			&i.LabID,
-			&i.Researchnumber,
+			&i.ResearcherNumber,
 			&i.Name,
 			&i.Gender,
 			&i.Title,
@@ -210,7 +219,7 @@ func (q *Queries) ListResearcherAll(ctx context.Context) ([]Researcher, error) {
 }
 
 const listResearcherByLab = `-- name: ListResearcherByLab :many
-SELECT researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE lab_id = $1
+SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE lab_id = $1
 `
 
 func (q *Queries) ListResearcherByLab(ctx context.Context, labID int32) ([]Researcher, error) {
@@ -225,7 +234,7 @@ func (q *Queries) ListResearcherByLab(ctx context.Context, labID int32) ([]Resea
 		if err := rows.Scan(
 			&i.Researcherid,
 			&i.LabID,
-			&i.Researchnumber,
+			&i.ResearcherNumber,
 			&i.Name,
 			&i.Gender,
 			&i.Title,
@@ -376,7 +385,7 @@ func (q *Queries) ListSecretaryServiceBySID(ctx context.Context, secretaryid int
 
 const updateResearcher = `-- name: UpdateResearcher :one
 UPDATE Researchers SET lab_id = $1, Name = $2, Gender = $3, Title = $4, Age = $5, ResearchDirection = $6, Leader = $7 WHERE ResearcherID = $8
-RETURNING researcherid, lab_id, researchnumber, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection
+RETURNING researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection
 `
 
 type UpdateResearcherParams struct {
@@ -405,7 +414,7 @@ func (q *Queries) UpdateResearcher(ctx context.Context, arg UpdateResearcherPara
 	err := row.Scan(
 		&i.Researcherid,
 		&i.LabID,
-		&i.Researchnumber,
+		&i.ResearcherNumber,
 		&i.Name,
 		&i.Gender,
 		&i.Title,

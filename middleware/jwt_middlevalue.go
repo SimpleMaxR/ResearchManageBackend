@@ -27,8 +27,8 @@ var JwtKey = []byte(utils.JwtKey)
 
 // Claims token 结构体
 type Claims struct {
-	Userid int32 `json:"userid"`
-	Role   int32 `json:"roleid"`
+	Userid string `json:"userid"`
+	Role   int32  `json:"roleid"`
 	jwt.StandardClaims
 }
 

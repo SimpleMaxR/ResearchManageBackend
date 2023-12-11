@@ -136,7 +136,7 @@ type Qualitymonitor struct {
 type Researcher struct {
 	Researcherid      int32
 	LabID             int32
-	Researchnumber    int32
+	ResearcherNumber  string
 	Name              string
 	Gender            string
 	Title             string
@@ -179,7 +179,7 @@ type Subtopic struct {
 }
 
 type User struct {
-	Userid   int32
+	Userid   string
 	Username string
 	Password string
 	Roleid   int32

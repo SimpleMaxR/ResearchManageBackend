@@ -7,7 +7,7 @@ SELECT * FROM Researchers;
 SELECT * FROM Researchers WHERE ResearcherID = $1;
 
 -- name: CreateResearcher :one
-INSERT INTO Researchers (lab_id, Name, Gender, Title, Age, ResearchDirection, Leader) VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO Researchers (lab_id, researcher_number, Name, Gender, Title, Age, emailaddress, Leader, startdate, term, researchDirection) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING ResearcherID;
 
 -- name: UpdateResearcher :one
