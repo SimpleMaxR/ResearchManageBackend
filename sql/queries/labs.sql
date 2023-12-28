@@ -13,7 +13,7 @@ SELECT * FROM Laboratories;
 
 -- name: CreateLab :one
 INSERT INTO Laboratories (Name, office_area, Address, research_direction) VALUES ($1, $2, $3, $4) 
-RETURNING lab_id;
+RETURNING *;
 
 -- name: UpdateLab :one
 UPDATE Laboratories SET Name = $1, office_area = $2, Address = $3, research_direction = $4 WHERE lab_id = $5

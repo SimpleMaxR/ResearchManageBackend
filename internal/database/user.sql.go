@@ -9,17 +9,17 @@ import (
 	"context"
 )
 
-const adminLogin = `-- name: AdminLogin :one
-SELECT userid, username, password, roleid FROM Users WHERE Role = 'admin' AND Username = $1 AND Password = $2 LIMIT 1
+const login = `-- name: Login :one
+SELECT userid, username, password, roleid FROM Users WHERE Username = $1 AND Password = $2 LIMIT 1
 `
 
-type AdminLoginParams struct {
+type LoginParams struct {
 	Username string
 	Password string
 }
 
-func (q *Queries) AdminLogin(ctx context.Context, arg AdminLoginParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, adminLogin, arg.Username, arg.Password)
+func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, login, arg.Username, arg.Password)
 	var i User
 	err := row.Scan(
 		&i.Userid,

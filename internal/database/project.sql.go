@@ -7,39 +7,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
-
-const createAchievement = `-- name: CreateAchievement :one
-
-INSERT INTO achievements (name, obtaineddate, contributorid, baseproject, basesubtopic, rank) VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING achievementid
-`
-
-type CreateAchievementParams struct {
-	Name          string
-	Obtaineddate  time.Time
-	Contributorid int32
-	Baseproject   int32
-	Basesubtopic  sql.NullInt32
-	Rank          int32
-}
-
-// achievements
-func (q *Queries) CreateAchievement(ctx context.Context, arg CreateAchievementParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createAchievement,
-		arg.Name,
-		arg.Obtaineddate,
-		arg.Contributorid,
-		arg.Baseproject,
-		arg.Basesubtopic,
-		arg.Rank,
-	)
-	var achievementid int32
-	err := row.Scan(&achievementid)
-	return achievementid, err
-}
 
 const createProject = `-- name: CreateProject :one
 INSERT INTO projects (peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -49,10 +18,10 @@ RETURNING projectid
 type CreateProjectParams struct {
 	Peojectleader     int32
 	Name              string
-	Researchcontent   sql.NullString
+	Researchcontent   string
 	Totalfunds        float64
-	Startdate         time.Time
-	Enddate           time.Time
+	Startdate         string
+	Enddate           string
 	Qualitymonitorsid int32
 	Clientid          int32
 }
@@ -73,43 +42,6 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (i
 	return projectid, err
 }
 
-const createSubtopic = `-- name: CreateSubtopic :one
-
-INSERT INTO subtopics (projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators) VALUES ($1, $2, $3, $4, $5)
-RETURNING subtopicid
-`
-
-type CreateSubtopicParams struct {
-	Projectid           int32
-	Leaderid            int32
-	Enddaterequirement  time.Time
-	Disposablefunds     float64
-	Technicalindicators string
-}
-
-// Subtopic
-func (q *Queries) CreateSubtopic(ctx context.Context, arg CreateSubtopicParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createSubtopic,
-		arg.Projectid,
-		arg.Leaderid,
-		arg.Enddaterequirement,
-		arg.Disposablefunds,
-		arg.Technicalindicators,
-	)
-	var subtopicid int32
-	err := row.Scan(&subtopicid)
-	return subtopicid, err
-}
-
-const deleteAchievement = `-- name: DeleteAchievement :exec
-DELETE FROM achievements WHERE achievementid = $1
-`
-
-func (q *Queries) DeleteAchievement(ctx context.Context, achievementid int32) error {
-	_, err := q.db.ExecContext(ctx, deleteAchievement, achievementid)
-	return err
-}
-
 const deleteProject = `-- name: DeleteProject :exec
 DELETE FROM projects WHERE projectid = $1
 `
@@ -119,13 +51,58 @@ func (q *Queries) DeleteProject(ctx context.Context, projectid int32) error {
 	return err
 }
 
-const deleteSubtopic = `-- name: DeleteSubtopic :exec
-DELETE FROM subtopics WHERE subtopicid = $1
+const getParterByProject = `-- name: GetParterByProject :many
+SELECT partnerid, name, address, leaderid, officephone FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners WHERE projectid = $1) ORDER BY partnerid
 `
 
-func (q *Queries) DeleteSubtopic(ctx context.Context, subtopicid int32) error {
-	_, err := q.db.ExecContext(ctx, deleteSubtopic, subtopicid)
-	return err
+func (q *Queries) GetParterByProject(ctx context.Context, projectid int32) ([]Partner, error) {
+	rows, err := q.db.QueryContext(ctx, getParterByProject, projectid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Partner
+	for rows.Next() {
+		var i Partner
+		if err := rows.Scan(
+			&i.Partnerid,
+			&i.Name,
+			&i.Address,
+			&i.Leaderid,
+			&i.Officephone,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProjectById = `-- name: GetProjectById :one
+SELECT projectid, peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects WHERE projectid = $1
+`
+
+func (q *Queries) GetProjectById(ctx context.Context, projectid int32) (Project, error) {
+	row := q.db.QueryRowContext(ctx, getProjectById, projectid)
+	var i Project
+	err := row.Scan(
+		&i.Projectid,
+		&i.Peojectleader,
+		&i.Name,
+		&i.Researchcontent,
+		&i.Totalfunds,
+		&i.Startdate,
+		&i.Enddate,
+		&i.Qualitymonitorsid,
+		&i.Clientid,
+	)
+	return i, err
 }
 
 const linkProjectPartner = `-- name: LinkProjectPartner :exec
@@ -169,76 +146,6 @@ func (q *Queries) LinkProjectResearcher(ctx context.Context, arg LinkProjectRese
 	return err
 }
 
-const listAchievement = `-- name: ListAchievement :many
-SELECT achievementid, name, obtaineddate, contributorid, baseproject, basesubtopic, rank FROM achievements WHERE baseproject = $1
-`
-
-func (q *Queries) ListAchievement(ctx context.Context, baseproject int32) ([]Achievement, error) {
-	rows, err := q.db.QueryContext(ctx, listAchievement, baseproject)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Achievement
-	for rows.Next() {
-		var i Achievement
-		if err := rows.Scan(
-			&i.Achievementid,
-			&i.Name,
-			&i.Obtaineddate,
-			&i.Contributorid,
-			&i.Baseproject,
-			&i.Basesubtopic,
-			&i.Rank,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listAchievementBySubtopic = `-- name: ListAchievementBySubtopic :many
-SELECT achievementid, name, obtaineddate, contributorid, baseproject, basesubtopic, rank FROM achievements WHERE basesubtopic = $1
-`
-
-func (q *Queries) ListAchievementBySubtopic(ctx context.Context, basesubtopic sql.NullInt32) ([]Achievement, error) {
-	rows, err := q.db.QueryContext(ctx, listAchievementBySubtopic, basesubtopic)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Achievement
-	for rows.Next() {
-		var i Achievement
-		if err := rows.Scan(
-			&i.Achievementid,
-			&i.Name,
-			&i.Obtaineddate,
-			&i.Contributorid,
-			&i.Baseproject,
-			&i.Basesubtopic,
-			&i.Rank,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listProjectAll = `-- name: ListProjectAll :many
 SELECT projectid, peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects
 `
@@ -262,39 +169,6 @@ func (q *Queries) ListProjectAll(ctx context.Context) ([]Project, error) {
 			&i.Enddate,
 			&i.Qualitymonitorsid,
 			&i.Clientid,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listProjectPartner = `-- name: ListProjectPartner :many
-SELECT partnerid, name, address, leaderid, officephone FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners WHERE projectid = $1)
-`
-
-func (q *Queries) ListProjectPartner(ctx context.Context, projectid int32) ([]Partner, error) {
-	rows, err := q.db.QueryContext(ctx, listProjectPartner, projectid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Partner
-	for rows.Next() {
-		var i Partner
-		if err := rows.Scan(
-			&i.Partnerid,
-			&i.Name,
-			&i.Address,
-			&i.Leaderid,
-			&i.Officephone,
 		); err != nil {
 			return nil, err
 		}
@@ -349,40 +223,6 @@ func (q *Queries) ListProjectResearcher(ctx context.Context, projectid int32) ([
 	return items, nil
 }
 
-const listSubtopic = `-- name: ListSubtopic :many
-SELECT subtopicid, projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators FROM subtopics WHERE projectid = $1
-`
-
-func (q *Queries) ListSubtopic(ctx context.Context, projectid int32) ([]Subtopic, error) {
-	rows, err := q.db.QueryContext(ctx, listSubtopic, projectid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Subtopic
-	for rows.Next() {
-		var i Subtopic
-		if err := rows.Scan(
-			&i.Subtopicid,
-			&i.Projectid,
-			&i.Leaderid,
-			&i.Enddaterequirement,
-			&i.Disposablefunds,
-			&i.Technicalindicators,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const unlinkProjectPartner = `-- name: UnlinkProjectPartner :exec
 DELETE FROM projectpartners WHERE projectid = $1 AND partnerid = $2
 `
@@ -420,10 +260,10 @@ type UpdateProjectParams struct {
 	Projectid         int32
 	Peojectleader     int32
 	Name              string
-	Researchcontent   sql.NullString
+	Researchcontent   string
 	Totalfunds        float64
-	Startdate         time.Time
-	Enddate           time.Time
+	Startdate         string
+	Enddate           string
 	Qualitymonitorsid int32
 	Clientid          int32
 }
@@ -451,41 +291,6 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 		&i.Enddate,
 		&i.Qualitymonitorsid,
 		&i.Clientid,
-	)
-	return i, err
-}
-
-const updateSubtopic = `-- name: UpdateSubtopic :one
-UPDATE subtopics SET projectid = $2, leaderid = $3, enddaterequirement = $4, disposablefunds = $5, technicalindicators = $6 WHERE subtopicid = $1
-RETURNING subtopicid, projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators
-`
-
-type UpdateSubtopicParams struct {
-	Subtopicid          int32
-	Projectid           int32
-	Leaderid            int32
-	Enddaterequirement  time.Time
-	Disposablefunds     float64
-	Technicalindicators string
-}
-
-func (q *Queries) UpdateSubtopic(ctx context.Context, arg UpdateSubtopicParams) (Subtopic, error) {
-	row := q.db.QueryRowContext(ctx, updateSubtopic,
-		arg.Subtopicid,
-		arg.Projectid,
-		arg.Leaderid,
-		arg.Enddaterequirement,
-		arg.Disposablefunds,
-		arg.Technicalindicators,
-	)
-	var i Subtopic
-	err := row.Scan(
-		&i.Subtopicid,
-		&i.Projectid,
-		&i.Leaderid,
-		&i.Enddaterequirement,
-		&i.Disposablefunds,
-		&i.Technicalindicators,
 	)
 	return i, err
 }

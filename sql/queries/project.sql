@@ -12,6 +12,9 @@ DELETE FROM projects WHERE projectid = $1;
 -- name: ListProjectAll :many
 SELECT * FROM projects;
 
+-- name: GetProjectById :one
+SELECT * FROM projects WHERE projectid = $1;
+
 
 -- ProjectPartner
 
@@ -21,8 +24,9 @@ INSERT INTO projectpartners (projectid, partnerid) VALUES ($1, $2);
 -- name: UnlinkProjectPartner :exec
 DELETE FROM projectpartners WHERE projectid = $1 AND partnerid = $2;
 
--- name: ListProjectPartner :many
-SELECT * FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners WHERE projectid = $1);
+-- name: GetParterByProject :many
+SELECT * FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners WHERE projectid = $1) ORDER BY partnerid;
+
 
 
 -- ProjectResearcher
@@ -35,36 +39,3 @@ DELETE FROM projectResearchers WHERE projectid = $1 AND researcherid = $2;
 
 -- name: ListProjectResearcher :many
 SELECT * FROM researchers WHERE researcherid IN (SELECT researcherid FROM projectResearchers WHERE projectid = $1);
-
-
--- Subtopic
-
--- name: CreateSubtopic :one
-INSERT INTO subtopics (projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators) VALUES ($1, $2, $3, $4, $5)
-RETURNING subtopicid;
-
--- name: UpdateSubtopic :one
-UPDATE subtopics SET projectid = $2, leaderid = $3, enddaterequirement = $4, disposablefunds = $5, technicalindicators = $6 WHERE subtopicid = $1
-RETURNING *;
-
--- name: DeleteSubtopic :exec
-DELETE FROM subtopics WHERE subtopicid = $1;
-
--- name: ListSubtopic :many
-SELECT * FROM subtopics WHERE projectid = $1;
-
-
--- achievements
-
--- name: CreateAchievement :one
-INSERT INTO achievements (name, obtaineddate, contributorid, baseproject, basesubtopic, rank) VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING achievementid;
-
--- name: DeleteAchievement :exec
-DELETE FROM achievements WHERE achievementid = $1;
-
--- name: ListAchievement :many
-SELECT * FROM achievements WHERE baseproject = $1;
-
--- name: ListAchievementBySubtopic :many
-SELECT * FROM achievements WHERE basesubtopic = $1;

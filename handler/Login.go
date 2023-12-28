@@ -31,7 +31,7 @@ func (apiCfg apiConfig) HandlerAdminLogin(c *gin.Context) {
 	}
 
 	// 查询数据库, 得到用户信息
-	user, err = apiCfg.DB.AdminLogin(c.Request.Context(), database.AdminLoginParams{
+	user, err = apiCfg.DB.Login(c.Request.Context(), database.LoginParams{
 		Username: adminInfo.Username,
 		Password: adminInfo.Password,
 	})

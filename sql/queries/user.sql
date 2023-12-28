@@ -1,2 +1,2 @@
--- name: AdminLogin :one
-SELECT * FROM Users WHERE Role = 'admin' AND Username = $1 AND Password = $2 LIMIT 1;
+-- name: Login :one
+SELECT * FROM Users WHERE Username = $1 AND Password = $2 LIMIT 1;

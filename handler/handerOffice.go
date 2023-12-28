@@ -16,7 +16,7 @@ var office struct {
 }
 
 // CreateOffice handles the creation of a new office
-func CreateOffice(c *gin.Context) {
+func (apiCfg *apiConfig) CreateOffice(c *gin.Context) {
 
 	// 解析参数
 	if err := c.ShouldBindJSON(&office); err != nil {
@@ -39,7 +39,7 @@ func CreateOffice(c *gin.Context) {
 }
 
 // UpdateOffice updates an existing office
-func UpdateOffice(c *gin.Context) {
+func (apiCfg *apiConfig) UpdateOffice(c *gin.Context) {
 	var office database.Office
 	if err := c.ShouldBindJSON(&office); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -64,7 +64,7 @@ func UpdateOffice(c *gin.Context) {
 }
 
 // DeleteOffice deletes an existing office
-func DeleteOffice(c *gin.Context) {
+func (apiCfg *apiConfig) DeleteOffice(c *gin.Context) {
 	var officeIDparam int
 	var officeID int32
 
@@ -83,4 +83,15 @@ func DeleteOffice(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Office deleted successfully"})
+}
+
+// ListOfficeAll lists all offices
+func (apiCfg *apiConfig) ListOfficeAll(c *gin.Context) {
+	offices, err := apiCfg.DB.ListOfficeAll(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, offices)
 }

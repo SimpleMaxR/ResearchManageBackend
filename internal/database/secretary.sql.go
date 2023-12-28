@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
 )
 
 const createSecretary = `-- name: CreateSecretary :one
@@ -43,7 +42,7 @@ RETURNING secretaryid
 type CreateSecretaryServiceParams struct {
 	Secretaryid      int32
 	LabID            int32
-	Employmentdate   time.Time
+	Employmentdate   string
 	Responsibilities string
 }
 

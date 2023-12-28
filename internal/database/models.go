@@ -12,11 +12,11 @@ import (
 type Achievement struct {
 	Achievementid int32
 	Name          string
-	Obtaineddate  time.Time
+	Obtaineddate  string
 	Contributorid int32
 	Baseproject   int32
-	Basesubtopic  sql.NullInt32
-	Rank          int32
+	Basesubtopic  int32
+	Type          int32
 }
 
 type Client struct {
@@ -65,9 +65,9 @@ type Laboratory struct {
 type Leader struct {
 	Leaderid     int32
 	Name         string
-	Officephone  sql.NullString
-	Mobilephone  sql.NullString
-	Emailaddress sql.NullString
+	Officephone  string
+	Mobilephone  string
+	Emailaddress string
 }
 
 type Office struct {
@@ -100,10 +100,10 @@ type Project struct {
 	Projectid         int32
 	Peojectleader     int32
 	Name              string
-	Researchcontent   sql.NullString
+	Researchcontent   string
 	Totalfunds        float64
-	Startdate         time.Time
-	Enddate           time.Time
+	Startdate         string
+	Enddate           string
 	Qualitymonitorsid int32
 	Clientid          int32
 }
@@ -160,7 +160,7 @@ type Secretary struct {
 type Secretaryservice struct {
 	Secretaryid      int32
 	LabID            int32
-	Employmentdate   time.Time
+	Employmentdate   string
 	Responsibilities string
 }
 
@@ -173,7 +173,7 @@ type Subtopic struct {
 	Projectid  int32
 	Leaderid   int32
 	// DDL日期
-	Enddaterequirement  time.Time
+	Enddaterequirement  string
 	Disposablefunds     float64
 	Technicalindicators string
 }
