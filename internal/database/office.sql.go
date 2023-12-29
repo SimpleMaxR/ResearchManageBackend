@@ -92,6 +92,39 @@ func (q *Queries) ListOfficeAll(ctx context.Context) ([]Office, error) {
 	return items, nil
 }
 
+const listOfficeByLabID = `-- name: ListOfficeByLabID :many
+SELECT officeid, lab_id, area, address, managerid FROM offices WHERE lab_id = $1
+`
+
+func (q *Queries) ListOfficeByLabID(ctx context.Context, labID int32) ([]Office, error) {
+	rows, err := q.db.QueryContext(ctx, listOfficeByLabID, labID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Office
+	for rows.Next() {
+		var i Office
+		if err := rows.Scan(
+			&i.Officeid,
+			&i.LabID,
+			&i.Area,
+			&i.Address,
+			&i.Managerid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateOffice = `-- name: UpdateOffice :one
 UPDATE offices SET lab_id = $2, area = $3, address = $4, managerid = $5 WHERE officeid = $1
 RETURNING officeid, lab_id, area, address, managerid

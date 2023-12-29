@@ -2,9 +2,8 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (apiCfg *apiConfig) HandlerListLabAll(c *gin.Context) {
@@ -23,7 +22,8 @@ func (apiCfg *apiConfig) HandlerListLabAll(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"labList": labList,
+		"msg":  "success",
+		"data": labList,
 	})
 }
 
@@ -188,14 +188,3 @@ func (apiCfg *apiConfig) HandlerHealthzDatabase(c *gin.Context) {
 		"status": "ok",
 	})
 }
-
-// schema of table Directors(研究室主任表)
-// -- 创建研究室主任表
-// CREATE TABLE Directors (
-//     DirectorID INT PRIMARY KEY,
-//     LabID INT,
-//     StartDate DATE,
-//     Term INT,
-//     FOREIGN KEY (DirectorID) REFERENCES Researchers(ResearcherID),
-//     FOREIGN KEY (LabID) REFERENCES Laboratories(LabID)
-// );

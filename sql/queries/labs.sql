@@ -26,9 +26,6 @@ RETURNING *;
 -- name: ListDirectorByLab :one
 SELECT * FROM Researchers WHERE lab_id = $1 AND Leader = true;
 
--- name: ListSecretaryByLab :one
-SELECT * FROM SecretaryServices WHERE lab_id = $1;
-
 -- name: ListOfficeByLab :one
 SELECT * FROM Offices WHERE lab_id = $1;
 

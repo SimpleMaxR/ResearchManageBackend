@@ -2,22 +2,26 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
-	"database/sql"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 var qm struct {
-	Name    string `json:"name" binding:"required"`
-	Address string `json:"address" binding:"required"`
-	Leader  int32  `json:"leaderId" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	Address      string `json:"address" binding:"required"`
+	Leader       int32  `json:"leaderId" binding:"required"`
+	ContactName  string `json:"contactName" binding:"required"`
+	ContactPhone string `json:"contactPhone" binding:"required"`
 }
 
 var partners struct {
-	Name        string `json:"name" binding:"required"`
-	Address     string `json:"address" binding:"required"`
-	Leader      int32  `json:"leaderId" binding:"required"`
-	OfficePhone string `json:"officePhone" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	Address      string `json:"address" binding:"required"`
+	Leader       int32  `json:"leaderId" binding:"required"`
+	OfficePhone  string `json:"officePhone" binding:"required"`
+	ContactName  string `json:"contactName" binding:"required"`
+	ContactPhone string `json:"contactPhone" binding:"required"`
 }
 
 var leader struct {
@@ -28,10 +32,12 @@ var leader struct {
 }
 
 var client struct {
-	Name    string `json:"name" binding:"required"`
-	Address string `json:"address" binding:"required"`
-	Leader  int32  `json:"leaderId" binding:"required"`
-	Phone   string `json:"phone" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	Address      string `json:"address" binding:"required"`
+	Leader       int32  `json:"leaderId" binding:"required"`
+	Phone        string `json:"phone" binding:"required"`
+	ContactName  string `json:"contactName" binding:"required"`
+	ContactPhone string `json:"contactPhone" binding:"required"`
 }
 
 // Leader 相关接口
@@ -51,7 +57,6 @@ func (apiCfg *apiConfig) CreateLeader(c *gin.Context) {
 	// 查询数据库
 	leader, err := apiCfg.DB.CreateLeader(c.Request.Context(), database.CreateLeaderParams{
 		Name:         leader.Name,
-		Officephone:  leader.OfficePhone,
 		Mobilephone:  leader.MobilePhone,
 		Emailaddress: leader.Email,
 	})
@@ -102,20 +107,72 @@ func (apiCfg *apiConfig) GetLeader(c *gin.Context) {
 // CreateQM handles the creation of a new qm
 func (apiCfg *apiConfig) CreateQM(c *gin.Context) {
 	var (
-		err error
+		err      error
+		LeaderId int32
+		params   struct {
+			Name         string `json:"name" binding:"required"`
+			Address      string `json:"address" binding:"required"`
+			ContactName  string `json:"contactName" binding:"required"`
+			ContactPhone string `json:"contactPhone" binding:"required"`
+			Leader       struct {
+				Name        string `json:"name" binding:"required"`
+				MobilePhone string `json:"mobilePhone" binding:"required"`
+				Email       string `json:"email" binding:"required"`
+			}
+			ProjectId int32 `json:"projectId" binding:"required"`
+		}
 	)
 
 	// 解析参数
-	if err := c.ShouldBindJSON(&qm); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err = c.ShouldBindJSON(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "params error" + err.Error()})
 		return
 	}
 
-	// 查询数据库
-	qmList, err := apiCfg.DB.CreateQM(c.Request.Context(), database.CreateQMParams{
-		Name:     qm.Name,
-		Address:  qm.Address,
-		Leaderid: qm.Leader,
+	// 新建 leader
+	// 查询是否已经存在
+	isLeaderExist, err := apiCfg.DB.IsLeaderExists(c.Request.Context(), database.IsLeaderExistsParams{
+		Name:         params.Leader.Name,
+		Mobilephone:  params.Leader.MobilePhone,
+		Emailaddress: params.Leader.Email,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 如果存在，获取 id, 否则新建
+	if isLeaderExist {
+		leaderId, err := apiCfg.DB.GetLeaderIdByInfo(c.Request.Context(), database.GetLeaderIdByInfoParams{
+			Name:         params.Leader.Name,
+			Mobilephone:  params.Leader.MobilePhone,
+			Emailaddress: params.Leader.Email,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		LeaderId = leaderId
+	} else {
+		leaderId, err := apiCfg.DB.CreateLeader(c.Request.Context(), database.CreateLeaderParams{
+			Name:         params.Leader.Name,
+			Mobilephone:  params.Leader.MobilePhone,
+			Emailaddress: params.Leader.Email,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		LeaderId = leaderId
+	}
+
+	// 新建 QM
+	QMId, err := apiCfg.DB.CreateQM(c.Request.Context(), database.CreateQMParams{
+		Name:         params.Name,
+		Address:      params.Address,
+		Leaderid:     LeaderId,
+		Contactname:  params.ContactName,
+		Contactphone: params.ContactPhone,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -124,7 +181,8 @@ func (apiCfg *apiConfig) CreateQM(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"qmList": qmList,
+		"msg":  "success",
+		"data": QMId,
 	})
 }
 
@@ -145,7 +203,8 @@ func (apiCfg *apiConfig) ListQM(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"qmList": qmList,
+		"msg":  "success",
+		"data": qmList,
 	})
 }
 
@@ -153,18 +212,18 @@ func (apiCfg *apiConfig) ListQM(c *gin.Context) {
 func (apiCfg *apiConfig) GetQMByProjectID(c *gin.Context) {
 	var (
 		err       error
-		projectID int32
+		projectId int64
 	)
 
 	// 解析参数
-	err = c.ShouldBindJSON(projectID)
+	projectId, err = strconv.ParseInt(c.Query("projectId"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// 查询数据库
-	project, err := apiCfg.DB.GetProjectById(c.Request.Context(), projectID)
+	project, err := apiCfg.DB.GetProjectById(c.Request.Context(), int32(projectId))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -182,77 +241,85 @@ func (apiCfg *apiConfig) GetQMByProjectID(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"qm": qm,
+		"msg":  "success",
+		"data": qm,
 	})
 
-}
-
-// SetQMContact set qm contact
-func (apiCfg *apiConfig) SetQMContact(c *gin.Context) {
-	var (
-		err                error
-		setQMContactParams struct {
-			QMID        int32  `json:"qmId" binding:"required"`
-			Name        string `json:"name" binding:"required"`
-			OfficePhone string `json:"officePhone" binding:"required"`
-			MobilePhone string `json:"mobilePhone" binding:"required"`
-			Email       string `json:"email" binding:"required"`
-		}
-	)
-
-	// 解析参数
-	if err := c.ShouldBindJSON(&setQMContactParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "params is wrong"})
-		return
-	}
-
-	// 查询数据库
-	contactId, err := apiCfg.DB.CreateContact(c.Request.Context(), database.CreateContactParams{
-		Name:         qm.Name,
-		Officephone:  setQMContactParams.OfficePhone,
-		Mobilephone:  setQMContactParams.MobilePhone,
-		Emailaddress: setQMContactParams.Email,
-	})
-
-	contactId, err = apiCfg.DB.SetContactQM(c.Request.Context(), database.SetContactQMParams{
-		Baseqm: sql.NullInt32{
-			Int32: setQMContactParams.QMID,
-			Valid: true,
-		},
-		Contactid: contactId,
-	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error " + err.Error()})
-		return
-	}
-
-	// 返回数据
-	c.JSON(http.StatusOK, gin.H{
-		"contactId": contactId,
-	})
 }
 
 // Partners 相关接口
 
-// CreatePartners handles the creation of a new partners
+// CreatePartner handles the creation of a new partners
 func (apiCfg *apiConfig) CreatePartner(c *gin.Context) {
 	var (
-		err error
+		err      error
+		LeaderId int32
+		params   struct {
+			Name         string `json:"name" binding:"required"`
+			Address      string `json:"address" binding:"required"`
+			OfficePhone  string `json:"officePhone" binding:"required"`
+			ContactPhone string `json:"contactPhone"`
+			ContactName  string `json:"contactName"`
+			Leader       struct {
+				Name        string `json:"name" binding:"required"`
+				MobilePhone string `json:"mobilePhone" binding:"required"`
+				Email       string `json:"email" binding:"required"`
+			}
+			ProjectId int32 `json:"projectId" binding:"required"`
+		}
 	)
 
 	// 解析参数
-	if err := c.ShouldBindJSON(&partners); err != nil {
+	if err = c.ShouldBindJSON(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 查询数据库
-	partner, err := apiCfg.DB.CreatePartner(c.Request.Context(), database.CreatePartnerParams{
-		Name:        partners.Name,
-		Address:     partners.Address,
-		Leaderid:    partners.Leader,
-		Officephone: partners.OfficePhone,
+	// 新建 leader
+	// 查询是否已经存在
+	isLeaderExist, err := apiCfg.DB.IsLeaderExists(c.Request.Context(), database.IsLeaderExistsParams{
+		Name:         params.Leader.Name,
+		Mobilephone:  params.Leader.MobilePhone,
+		Emailaddress: params.Leader.Email,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 如果存在，获取 id, 否则新建
+	if isLeaderExist {
+		leaderId, err := apiCfg.DB.GetLeaderIdByInfo(c.Request.Context(), database.GetLeaderIdByInfoParams{
+			Name:         params.Leader.Name,
+			Mobilephone:  params.Leader.MobilePhone,
+			Emailaddress: params.Leader.Email,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		LeaderId = leaderId
+	} else {
+		leaderId, err := apiCfg.DB.CreateLeader(c.Request.Context(), database.CreateLeaderParams{
+			Name:         params.Leader.Name,
+			Mobilephone:  params.Leader.MobilePhone,
+			Emailaddress: params.Leader.Email,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		LeaderId = leaderId
+	}
+
+	// 新建 partner
+	partnerId, err := apiCfg.DB.CreatePartner(c.Request.Context(), database.CreatePartnerParams{
+		Name:         params.Name,
+		Address:      params.Address,
+		Leaderid:     LeaderId,
+		Officephone:  params.OfficePhone,
+		Contactphone: params.ContactPhone,
+		Contactname:  params.ContactName,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -263,7 +330,7 @@ func (apiCfg *apiConfig) CreatePartner(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code": "200",
 		"msg":  "success",
-		"data": partner,
+		"data": partnerId,
 	})
 }
 
@@ -294,18 +361,18 @@ func (apiCfg *apiConfig) ListPartners(c *gin.Context) {
 func (apiCfg *apiConfig) GetPartnerByProjectID(c *gin.Context) {
 	var (
 		err       error
-		projectID int32
+		projectID int64
 	)
 
 	// 解析参数
-	err = c.ShouldBindJSON(projectID)
+	projectID, err = strconv.ParseInt(c.Query("projectId"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "projectID is required"})
 		return
 	}
 
 	// 查询数据库
-	partners, err := apiCfg.DB.GetParterByProject(c.Request.Context(), projectID)
+	partners, err := apiCfg.DB.GetParterByProject(c.Request.Context(), int32(projectID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -324,8 +391,8 @@ func (apiCfg *apiConfig) GetPartnerByProjectID(c *gin.Context) {
 // LinkProjectPartner links a project with a partner
 func (apiCfg *apiConfig) LinkProjectPartner(c *gin.Context) {
 	var projectPartner struct {
-		ProjectID int32 `json:"ProjectID" binding:"required"`
-		PartnerID int32 `json:"PartnerID" binding:"required"`
+		ProjectID int32 `json:"projectId" binding:"required"`
+		PartnerID int32 `json:"partnerId" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&projectPartner); err != nil {
@@ -339,7 +406,8 @@ func (apiCfg *apiConfig) LinkProjectPartner(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, gin.H{
-		"projectPartnerInfo": projectPartnerInfo,
+		"msg":  "success",
+		"data": projectPartnerInfo,
 	})
 }
 
@@ -348,21 +416,73 @@ func (apiCfg *apiConfig) LinkProjectPartner(c *gin.Context) {
 // CreateClient
 func (apiCfg *apiConfig) CreateClient(c *gin.Context) {
 	var (
-		err error
+		LeaderId int32
+		err      error
+		params   struct {
+			Name         string `json:"name" binding:"required"`
+			Address      string `json:"address" binding:"required"`
+			OfficePhone  string `json:"officePhone" binding:"required"`
+			ContactName  string `json:"contactName" binding:"required"`
+			ContactPhone string `json:"contactPhone" binding:"required"`
+			Leader       struct {
+				Name        string `json:"name" binding:"required"`
+				MobilePhone string `json:"mobilePhone" binding:"required"`
+				Email       string `json:"email" binding:"required"`
+			}
+		}
 	)
 
 	// 解析参数
-	if err := c.ShouldBindJSON(&client); err != nil {
+	if err := c.ShouldBindJSON(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// 新建 leader
+	// 查询是否已经存在
+	isLeaderExist, err := apiCfg.DB.IsLeaderExists(c.Request.Context(), database.IsLeaderExistsParams{
+		Name:         params.Leader.Name,
+		Mobilephone:  params.Leader.MobilePhone,
+		Emailaddress: params.Leader.Email,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 如果存在，获取 id, 否则新建
+	if isLeaderExist {
+		leaderId, err := apiCfg.DB.GetLeaderIdByInfo(c.Request.Context(), database.GetLeaderIdByInfoParams{
+			Name:         params.Leader.Name,
+			Mobilephone:  params.Leader.MobilePhone,
+			Emailaddress: params.Leader.Email,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		LeaderId = leaderId
+	} else {
+		leaderId, err := apiCfg.DB.CreateLeader(c.Request.Context(), database.CreateLeaderParams{
+			Name:         params.Leader.Name,
+			Mobilephone:  params.Leader.MobilePhone,
+			Emailaddress: params.Leader.Email,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		LeaderId = leaderId
+	}
+
 	// 查询数据库
 	client, err := apiCfg.DB.CreateClient(c.Request.Context(), database.CreateClientParams{
-		Name:        client.Name,
-		Address:     client.Address,
-		Leaderid:    client.Leader,
-		Officephone: client.Phone,
+		Name:         params.Name,
+		Address:      params.Address,
+		Leaderid:     LeaderId,
+		Officephone:  params.OfficePhone,
+		Contactname:  params.ContactName,
+		Contactphone: params.ContactPhone,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -382,11 +502,13 @@ func (apiCfg *apiConfig) UpdateClient(c *gin.Context) {
 	var (
 		err    error
 		params struct {
-			Clientid int32  `json:"clientId" binding:"required"`
-			Name     string `json:"name" binding:"required"`
-			Address  string `json:"address" binding:"required"`
-			Leader   int32  `json:"leaderId" binding:"required"`
-			Phone    string `json:"phone" binding:"required"`
+			Clientid     int32  `json:"clientId" binding:"required"`
+			Name         string `json:"name" binding:"required"`
+			Address      string `json:"address" binding:"required"`
+			Leader       int32  `json:"leaderId" binding:"required"`
+			Phone        string `json:"phone" binding:"required"`
+			ContactName  string `json:"contactName"`
+			ContactPhone string `json:"contactPhone"`
 		}
 	)
 
@@ -398,11 +520,13 @@ func (apiCfg *apiConfig) UpdateClient(c *gin.Context) {
 
 	// 查询数据库
 	client, err := apiCfg.DB.UpdateClient(c.Request.Context(), database.UpdateClientParams{
-		Clientid:    params.Clientid,
-		Name:        params.Name,
-		Address:     params.Address,
-		Leaderid:    params.Leader,
-		Officephone: params.Phone,
+		Clientid:     params.Clientid,
+		Name:         params.Name,
+		Address:      params.Address,
+		Leaderid:     params.Leader,
+		Officephone:  params.Phone,
+		Contactname:  params.ContactName,
+		Contactphone: params.ContactPhone,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -453,51 +577,5 @@ func (apiCfg *apiConfig) GetClientByProjectID(c *gin.Context) {
 		"code":   "200",
 		"msg":    "success",
 		"client": client,
-	})
-}
-
-// SetClientContact
-func (apiCfg *apiConfig) CreateClientContact(c *gin.Context) {
-	var (
-		err                    error
-		setClientContactParams struct {
-			ClientID    int32  `json:"clientId" binding:"required"`
-			Name        string `json:"name" binding:"required"`
-			OfficePhone string `json:"officePhone" binding:"required"`
-			MobilePhone string `json:"mobilePhone" binding:"required"`
-			Email       string `json:"email" binding:"required"`
-		}
-	)
-
-	// 解析参数
-	if err := c.ShouldBindJSON(&setClientContactParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "params is wrong"})
-		return
-	}
-
-	// 查询数据库
-	contactId, err := apiCfg.DB.CreateContact(c.Request.Context(), database.CreateContactParams{
-		Name:         setClientContactParams.Name,
-		Officephone:  setClientContactParams.OfficePhone,
-		Mobilephone:  setClientContactParams.MobilePhone,
-		Emailaddress: setClientContactParams.Email,
-	})
-
-	contactId, err = apiCfg.DB.SetContactClient(c.Request.Context(), database.SetContactClientParams{
-		Baseclient: sql.NullInt32{
-			Int32: setClientContactParams.ClientID,
-			Valid: true,
-		},
-		Contactid: contactId,
-	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error " + err.Error()})
-		return
-	}
-
-	// 返回数据
-	c.JSON(http.StatusOK, gin.H{
-		"contactId": contactId,
 	})
 }

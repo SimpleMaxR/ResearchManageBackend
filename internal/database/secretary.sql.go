@@ -35,8 +35,7 @@ func (q *Queries) CreateSecretary(ctx context.Context, arg CreateSecretaryParams
 }
 
 const createSecretaryService = `-- name: CreateSecretaryService :one
-INSERT INTO secretaryservices (secretaryid, lab_id, employmentdate, responsibilities) VALUES ($1, $2, $3, $4) 
-RETURNING secretaryid
+INSERT INTO secretaryservices (secretaryid, lab_id, employmentdate, responsibilities) VALUES ($1, $2, $3, $4) RETURNING secretaryid, lab_id, employmentdate, responsibilities
 `
 
 type CreateSecretaryServiceParams struct {
@@ -46,16 +45,21 @@ type CreateSecretaryServiceParams struct {
 	Responsibilities string
 }
 
-func (q *Queries) CreateSecretaryService(ctx context.Context, arg CreateSecretaryServiceParams) (int32, error) {
+func (q *Queries) CreateSecretaryService(ctx context.Context, arg CreateSecretaryServiceParams) (Secretaryservice, error) {
 	row := q.db.QueryRowContext(ctx, createSecretaryService,
 		arg.Secretaryid,
 		arg.LabID,
 		arg.Employmentdate,
 		arg.Responsibilities,
 	)
-	var secretaryid int32
-	err := row.Scan(&secretaryid)
-	return secretaryid, err
+	var i Secretaryservice
+	err := row.Scan(
+		&i.Secretaryid,
+		&i.LabID,
+		&i.Employmentdate,
+		&i.Responsibilities,
+	)
+	return i, err
 }
 
 const deleteSecretary = `-- name: DeleteSecretary :exec
@@ -108,6 +112,24 @@ func (q *Queries) ListSecretaryAll(ctx context.Context) ([]Secretary, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const listSecretaryByID = `-- name: ListSecretaryByID :one
+SELECT secretaryid, name, gender, age, mobilephone, emailaddress FROM Secretaries WHERE SecretaryID = $1
+`
+
+func (q *Queries) ListSecretaryByID(ctx context.Context, secretaryid int32) (Secretary, error) {
+	row := q.db.QueryRowContext(ctx, listSecretaryByID, secretaryid)
+	var i Secretary
+	err := row.Scan(
+		&i.Secretaryid,
+		&i.Name,
+		&i.Gender,
+		&i.Age,
+		&i.Mobilephone,
+		&i.Emailaddress,
+	)
+	return i, err
 }
 
 const listSecretaryServiceByLab = `-- name: ListSecretaryServiceByLab :many

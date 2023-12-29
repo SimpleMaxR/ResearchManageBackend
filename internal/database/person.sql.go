@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createResearcher = `-- name: CreateResearcher :one
@@ -24,8 +23,8 @@ type CreateResearcherParams struct {
 	Age               int32
 	Emailaddress      string
 	Leader            bool
-	Startdate         sql.NullTime
-	Term              sql.NullInt32
+	Startdate         string
+	Term              int32
 	Researchdirection string
 }
 

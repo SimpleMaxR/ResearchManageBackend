@@ -7,19 +7,20 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createClient = `-- name: CreateClient :one
 
-INSERT INTO clients (name, address, officephone, leaderid) VALUES ($1, $2, $3, $4) RETURNING clientid
+INSERT INTO clients (name, address, officephone, leaderid, contactname, contactphone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING clientid
 `
 
 type CreateClientParams struct {
-	Name        string
-	Address     string
-	Officephone string
-	Leaderid    int32
+	Name         string
+	Address      string
+	Officephone  string
+	Leaderid     int32
+	Contactname  string
+	Contactphone string
 }
 
 // ClientPart
@@ -29,57 +30,28 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (int
 		arg.Address,
 		arg.Officephone,
 		arg.Leaderid,
+		arg.Contactname,
+		arg.Contactphone,
 	)
 	var clientid int32
 	err := row.Scan(&clientid)
 	return clientid, err
 }
 
-const createContact = `-- name: CreateContact :one
-
-INSERT INTO contacts (name, officephone, mobilephone, emailaddress) VALUES ($1, $2, $3, $4) RETURNING contactid
-`
-
-type CreateContactParams struct {
-	Name         string
-	Officephone  string
-	Mobilephone  string
-	Emailaddress string
-}
-
-// ContactsPart
-func (q *Queries) CreateContact(ctx context.Context, arg CreateContactParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createContact,
-		arg.Name,
-		arg.Officephone,
-		arg.Mobilephone,
-		arg.Emailaddress,
-	)
-	var contactid int32
-	err := row.Scan(&contactid)
-	return contactid, err
-}
-
 const createLeader = `-- name: CreateLeader :one
 
-INSERT INTO leaders (name, officephone, mobilephone, emailaddress) VALUES ($1, $2, $3, $4) RETURNING leaderid
+INSERT INTO leaders (name, mobilephone, emailaddress) VALUES ($1, $2, $3) RETURNING leaderid
 `
 
 type CreateLeaderParams struct {
 	Name         string
-	Officephone  string
 	Mobilephone  string
 	Emailaddress string
 }
 
 // LeaderPart
 func (q *Queries) CreateLeader(ctx context.Context, arg CreateLeaderParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createLeader,
-		arg.Name,
-		arg.Officephone,
-		arg.Mobilephone,
-		arg.Emailaddress,
-	)
+	row := q.db.QueryRowContext(ctx, createLeader, arg.Name, arg.Mobilephone, arg.Emailaddress)
 	var leaderid int32
 	err := row.Scan(&leaderid)
 	return leaderid, err
@@ -87,14 +59,16 @@ func (q *Queries) CreateLeader(ctx context.Context, arg CreateLeaderParams) (int
 
 const createPartner = `-- name: CreatePartner :one
 
-INSERT INTO partners (name, address, officephone, leaderid) VALUES ($1, $2, $3, $4) RETURNING partnerid
+INSERT INTO partners (name, address, officephone, leaderid, contactname, contactphone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING partnerid
 `
 
 type CreatePartnerParams struct {
-	Name        string
-	Address     string
-	Officephone string
-	Leaderid    int32
+	Name         string
+	Address      string
+	Officephone  string
+	Leaderid     int32
+	Contactname  string
+	Contactphone string
 }
 
 // PartnerPart
@@ -104,6 +78,8 @@ func (q *Queries) CreatePartner(ctx context.Context, arg CreatePartnerParams) (i
 		arg.Address,
 		arg.Officephone,
 		arg.Leaderid,
+		arg.Contactname,
+		arg.Contactphone,
 	)
 	var partnerid int32
 	err := row.Scan(&partnerid)
@@ -112,18 +88,26 @@ func (q *Queries) CreatePartner(ctx context.Context, arg CreatePartnerParams) (i
 
 const createQM = `-- name: CreateQM :one
 
-INSERT INTO qualitymonitors (name, address, leaderid) VALUES ($1, $2, $3) RETURNING monitorid
+INSERT INTO qualitymonitors (name, address, leaderid, contactname, contactphone) VALUES ($1, $2, $3, $4, $5) RETURNING monitorid
 `
 
 type CreateQMParams struct {
-	Name     string
-	Address  string
-	Leaderid int32
+	Name         string
+	Address      string
+	Leaderid     int32
+	Contactname  string
+	Contactphone string
 }
 
 // QMPart
 func (q *Queries) CreateQM(ctx context.Context, arg CreateQMParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createQM, arg.Name, arg.Address, arg.Leaderid)
+	row := q.db.QueryRowContext(ctx, createQM,
+		arg.Name,
+		arg.Address,
+		arg.Leaderid,
+		arg.Contactname,
+		arg.Contactphone,
+	)
 	var monitorid int32
 	err := row.Scan(&monitorid)
 	return monitorid, err
@@ -166,7 +150,7 @@ func (q *Queries) DeleteQM(ctx context.Context, monitorid int32) error {
 }
 
 const getClient = `-- name: GetClient :one
-SELECT clientid, name, address, leaderid, officephone FROM clients WHERE clientid = $1
+SELECT clientid, name, address, leaderid, officephone, contactname, contactphone FROM clients WHERE clientid = $1
 `
 
 func (q *Queries) GetClient(ctx context.Context, clientid int32) (Client, error) {
@@ -178,12 +162,14 @@ func (q *Queries) GetClient(ctx context.Context, clientid int32) (Client, error)
 		&i.Address,
 		&i.Leaderid,
 		&i.Officephone,
+		&i.Contactname,
+		&i.Contactphone,
 	)
 	return i, err
 }
 
 const getLeader = `-- name: GetLeader :one
-SELECT leaderid, name, officephone, mobilephone, emailaddress FROM leaders WHERE leaderid = $1
+SELECT leaderid, name, mobilephone, emailaddress FROM leaders WHERE leaderid = $1
 `
 
 func (q *Queries) GetLeader(ctx context.Context, leaderid int32) (Leader, error) {
@@ -192,15 +178,31 @@ func (q *Queries) GetLeader(ctx context.Context, leaderid int32) (Leader, error)
 	err := row.Scan(
 		&i.Leaderid,
 		&i.Name,
-		&i.Officephone,
 		&i.Mobilephone,
 		&i.Emailaddress,
 	)
 	return i, err
 }
 
+const getLeaderIdByInfo = `-- name: GetLeaderIdByInfo :one
+SELECT leaderid FROM leaders WHERE name = $1 AND mobilephone = $2 AND emailaddress = $3
+`
+
+type GetLeaderIdByInfoParams struct {
+	Name         string
+	Mobilephone  string
+	Emailaddress string
+}
+
+func (q *Queries) GetLeaderIdByInfo(ctx context.Context, arg GetLeaderIdByInfoParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getLeaderIdByInfo, arg.Name, arg.Mobilephone, arg.Emailaddress)
+	var leaderid int32
+	err := row.Scan(&leaderid)
+	return leaderid, err
+}
+
 const getPartner = `-- name: GetPartner :one
-SELECT partnerid, name, address, leaderid, officephone FROM partners WHERE partnerid = $1
+SELECT partnerid, name, address, leaderid, officephone, contactname, contactphone FROM partners WHERE partnerid = $1
 `
 
 func (q *Queries) GetPartner(ctx context.Context, partnerid int32) (Partner, error) {
@@ -212,12 +214,14 @@ func (q *Queries) GetPartner(ctx context.Context, partnerid int32) (Partner, err
 		&i.Address,
 		&i.Leaderid,
 		&i.Officephone,
+		&i.Contactname,
+		&i.Contactphone,
 	)
 	return i, err
 }
 
 const getQMById = `-- name: GetQMById :one
-SELECT monitorid, name, address, leaderid FROM qualitymonitors WHERE monitorid = $1
+SELECT monitorid, name, address, leaderid, contactname, contactphone FROM qualitymonitors WHERE monitorid = $1
 `
 
 func (q *Queries) GetQMById(ctx context.Context, monitorid int32) (Qualitymonitor, error) {
@@ -228,12 +232,31 @@ func (q *Queries) GetQMById(ctx context.Context, monitorid int32) (Qualitymonito
 		&i.Name,
 		&i.Address,
 		&i.Leaderid,
+		&i.Contactname,
+		&i.Contactphone,
 	)
 	return i, err
 }
 
+const isLeaderExists = `-- name: IsLeaderExists :one
+SELECT EXISTS(SELECT 1 FROM leaders WHERE name = $1 AND mobilephone = $2 AND emailaddress = $3) AS exists
+`
+
+type IsLeaderExistsParams struct {
+	Name         string
+	Mobilephone  string
+	Emailaddress string
+}
+
+func (q *Queries) IsLeaderExists(ctx context.Context, arg IsLeaderExistsParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isLeaderExists, arg.Name, arg.Mobilephone, arg.Emailaddress)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const listClient = `-- name: ListClient :one
-SELECT clientid, name, address, leaderid, officephone FROM clients
+SELECT clientid, name, address, leaderid, officephone, contactname, contactphone FROM clients
 `
 
 func (q *Queries) ListClient(ctx context.Context) (Client, error) {
@@ -245,12 +268,14 @@ func (q *Queries) ListClient(ctx context.Context) (Client, error) {
 		&i.Address,
 		&i.Leaderid,
 		&i.Officephone,
+		&i.Contactname,
+		&i.Contactphone,
 	)
 	return i, err
 }
 
 const listPartner = `-- name: ListPartner :many
-SELECT partnerid, name, address, leaderid, officephone FROM partners
+SELECT partnerid, name, address, leaderid, officephone, contactname, contactphone FROM partners
 `
 
 func (q *Queries) ListPartner(ctx context.Context) ([]Partner, error) {
@@ -268,6 +293,8 @@ func (q *Queries) ListPartner(ctx context.Context) ([]Partner, error) {
 			&i.Address,
 			&i.Leaderid,
 			&i.Officephone,
+			&i.Contactname,
+			&i.Contactphone,
 		); err != nil {
 			return nil, err
 		}
@@ -283,7 +310,7 @@ func (q *Queries) ListPartner(ctx context.Context) ([]Partner, error) {
 }
 
 const listQM = `-- name: ListQM :one
-SELECT monitorid, name, address, leaderid FROM qualitymonitors
+SELECT monitorid, name, address, leaderid, contactname, contactphone FROM qualitymonitors
 `
 
 func (q *Queries) ListQM(ctx context.Context) (Qualitymonitor, error) {
@@ -294,68 +321,24 @@ func (q *Queries) ListQM(ctx context.Context) (Qualitymonitor, error) {
 		&i.Name,
 		&i.Address,
 		&i.Leaderid,
+		&i.Contactname,
+		&i.Contactphone,
 	)
 	return i, err
 }
 
-const setContactClient = `-- name: SetContactClient :one
-UPDATE contacts SET baseclient = $1 WHERE contactid = $2 RETURNING contactid
-`
-
-type SetContactClientParams struct {
-	Baseclient sql.NullInt32
-	Contactid  int32
-}
-
-func (q *Queries) SetContactClient(ctx context.Context, arg SetContactClientParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, setContactClient, arg.Baseclient, arg.Contactid)
-	var contactid int32
-	err := row.Scan(&contactid)
-	return contactid, err
-}
-
-const setContactPartner = `-- name: SetContactPartner :one
-UPDATE contacts SET basepartners = $1 WHERE contactid = $2 RETURNING contactid
-`
-
-type SetContactPartnerParams struct {
-	Basepartners sql.NullInt32
-	Contactid    int32
-}
-
-func (q *Queries) SetContactPartner(ctx context.Context, arg SetContactPartnerParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, setContactPartner, arg.Basepartners, arg.Contactid)
-	var contactid int32
-	err := row.Scan(&contactid)
-	return contactid, err
-}
-
-const setContactQM = `-- name: SetContactQM :one
-UPDATE contacts SET baseqm = $1 WHERE contactid = $2 RETURNING contactid
-`
-
-type SetContactQMParams struct {
-	Baseqm    sql.NullInt32
-	Contactid int32
-}
-
-func (q *Queries) SetContactQM(ctx context.Context, arg SetContactQMParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, setContactQM, arg.Baseqm, arg.Contactid)
-	var contactid int32
-	err := row.Scan(&contactid)
-	return contactid, err
-}
-
 const updateClient = `-- name: UpdateClient :one
-UPDATE clients SET name = $1, address = $2, officephone = $3, leaderid = $4 WHERE clientid = $5 RETURNING clientid, name, address, leaderid, officephone
+UPDATE clients SET name = $1, address = $2, officephone = $3, leaderid = $4, contactname = $5, contactphone = $6 WHERE clientid = $7 RETURNING clientid, name, address, leaderid, officephone, contactname, contactphone
 `
 
 type UpdateClientParams struct {
-	Name        string
-	Address     string
-	Officephone string
-	Leaderid    int32
-	Clientid    int32
+	Name         string
+	Address      string
+	Officephone  string
+	Leaderid     int32
+	Contactname  string
+	Contactphone string
+	Clientid     int32
 }
 
 func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error) {
@@ -364,6 +347,8 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 		arg.Address,
 		arg.Officephone,
 		arg.Leaderid,
+		arg.Contactname,
+		arg.Contactphone,
 		arg.Clientid,
 	)
 	var i Client
@@ -373,6 +358,8 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 		&i.Address,
 		&i.Leaderid,
 		&i.Officephone,
+		&i.Contactname,
+		&i.Contactphone,
 	)
 	return i, err
 }

@@ -11,12 +11,12 @@ import (
 )
 
 const createProject = `-- name: CreateProject :one
-INSERT INTO projects (peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO projects (projectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING projectid
 `
 
 type CreateProjectParams struct {
-	Peojectleader     int32
+	Projectleader     int32
 	Name              string
 	Researchcontent   string
 	Totalfunds        float64
@@ -28,7 +28,7 @@ type CreateProjectParams struct {
 
 func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createProject,
-		arg.Peojectleader,
+		arg.Projectleader,
 		arg.Name,
 		arg.Researchcontent,
 		arg.Totalfunds,
@@ -52,7 +52,7 @@ func (q *Queries) DeleteProject(ctx context.Context, projectid int32) error {
 }
 
 const getParterByProject = `-- name: GetParterByProject :many
-SELECT partnerid, name, address, leaderid, officephone FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners WHERE projectid = $1) ORDER BY partnerid
+SELECT partnerid, name, address, leaderid, officephone, contactname, contactphone FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners WHERE projectid = $1) ORDER BY partnerid
 `
 
 func (q *Queries) GetParterByProject(ctx context.Context, projectid int32) ([]Partner, error) {
@@ -70,6 +70,8 @@ func (q *Queries) GetParterByProject(ctx context.Context, projectid int32) ([]Pa
 			&i.Address,
 			&i.Leaderid,
 			&i.Officephone,
+			&i.Contactname,
+			&i.Contactphone,
 		); err != nil {
 			return nil, err
 		}
@@ -85,7 +87,7 @@ func (q *Queries) GetParterByProject(ctx context.Context, projectid int32) ([]Pa
 }
 
 const getProjectById = `-- name: GetProjectById :one
-SELECT projectid, peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects WHERE projectid = $1
+SELECT projectid, projectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects WHERE projectid = $1
 `
 
 func (q *Queries) GetProjectById(ctx context.Context, projectid int32) (Project, error) {
@@ -93,7 +95,7 @@ func (q *Queries) GetProjectById(ctx context.Context, projectid int32) (Project,
 	var i Project
 	err := row.Scan(
 		&i.Projectid,
-		&i.Peojectleader,
+		&i.Projectleader,
 		&i.Name,
 		&i.Researchcontent,
 		&i.Totalfunds,
@@ -147,7 +149,7 @@ func (q *Queries) LinkProjectResearcher(ctx context.Context, arg LinkProjectRese
 }
 
 const listProjectAll = `-- name: ListProjectAll :many
-SELECT projectid, peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects
+SELECT projectid, projectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects
 `
 
 func (q *Queries) ListProjectAll(ctx context.Context) ([]Project, error) {
@@ -161,7 +163,7 @@ func (q *Queries) ListProjectAll(ctx context.Context) ([]Project, error) {
 		var i Project
 		if err := rows.Scan(
 			&i.Projectid,
-			&i.Peojectleader,
+			&i.Projectleader,
 			&i.Name,
 			&i.Researchcontent,
 			&i.Totalfunds,
@@ -252,13 +254,13 @@ func (q *Queries) UnlinkProjectResearcher(ctx context.Context, arg UnlinkProject
 }
 
 const updateProject = `-- name: UpdateProject :one
-UPDATE projects SET peojectleader = $2, name = $3, researchcontent = $4, totalfunds = $5, startdate = $6, enddate = $7, qualitymonitorsid = $8, clientid = $9 WHERE projectid = $1
-RETURNING projectid, peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid
+UPDATE projects SET projectleader = $2, name = $3, researchcontent = $4, totalfunds = $5, startdate = $6, enddate = $7, qualitymonitorsid = $8, clientid = $9 WHERE projectid = $1
+RETURNING projectid, projectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid
 `
 
 type UpdateProjectParams struct {
 	Projectid         int32
-	Peojectleader     int32
+	Projectleader     int32
 	Name              string
 	Researchcontent   string
 	Totalfunds        float64
@@ -271,7 +273,7 @@ type UpdateProjectParams struct {
 func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error) {
 	row := q.db.QueryRowContext(ctx, updateProject,
 		arg.Projectid,
-		arg.Peojectleader,
+		arg.Projectleader,
 		arg.Name,
 		arg.Researchcontent,
 		arg.Totalfunds,
@@ -283,7 +285,7 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 	var i Project
 	err := row.Scan(
 		&i.Projectid,
-		&i.Peojectleader,
+		&i.Projectleader,
 		&i.Name,
 		&i.Researchcontent,
 		&i.Totalfunds,

@@ -11,7 +11,7 @@ import (
 
 const createLab = `-- name: CreateLab :one
 INSERT INTO Laboratories (Name, office_area, Address, research_direction) VALUES ($1, $2, $3, $4) 
-RETURNING lab_id
+RETURNING lab_id, name, office_area, address, research_direction
 `
 
 type CreateLabParams struct {
@@ -21,16 +21,22 @@ type CreateLabParams struct {
 	ResearchDirection string
 }
 
-func (q *Queries) CreateLab(ctx context.Context, arg CreateLabParams) (int32, error) {
+func (q *Queries) CreateLab(ctx context.Context, arg CreateLabParams) (Laboratory, error) {
 	row := q.db.QueryRowContext(ctx, createLab,
 		arg.Name,
 		arg.OfficeArea,
 		arg.Address,
 		arg.ResearchDirection,
 	)
-	var lab_id int32
-	err := row.Scan(&lab_id)
-	return lab_id, err
+	var i Laboratory
+	err := row.Scan(
+		&i.LabID,
+		&i.Name,
+		&i.OfficeArea,
+		&i.Address,
+		&i.ResearchDirection,
+	)
+	return i, err
 }
 
 const deleteLab = `-- name: DeleteLab :one
@@ -166,22 +172,6 @@ func (q *Queries) ListOfficeByLab(ctx context.Context, labID int32) (Office, err
 		&i.Area,
 		&i.Address,
 		&i.Managerid,
-	)
-	return i, err
-}
-
-const listSecretaryByLab = `-- name: ListSecretaryByLab :one
-SELECT secretaryid, lab_id, employmentdate, responsibilities FROM SecretaryServices WHERE lab_id = $1
-`
-
-func (q *Queries) ListSecretaryByLab(ctx context.Context, labID int32) (Secretaryservice, error) {
-	row := q.db.QueryRowContext(ctx, listSecretaryByLab, labID)
-	var i Secretaryservice
-	err := row.Scan(
-		&i.Secretaryid,
-		&i.LabID,
-		&i.Employmentdate,
-		&i.Responsibilities,
 	)
 	return i, err
 }

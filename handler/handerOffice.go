@@ -2,10 +2,9 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-
-	"github.com/gin-gonic/gin"
 )
 
 var office struct {
@@ -35,7 +34,9 @@ func (apiCfg *apiConfig) CreateOffice(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"officeID": officeID})
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "success",
+		"data": officeID})
 }
 
 // UpdateOffice updates an existing office
@@ -59,30 +60,32 @@ func (apiCfg *apiConfig) UpdateOffice(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"office": updatedOffice,
+		"msg":  "success",
+		"data": updatedOffice,
 	})
 }
 
 // DeleteOffice deletes an existing office
 func (apiCfg *apiConfig) DeleteOffice(c *gin.Context) {
-	var officeIDparam int
-	var officeID int32
+	var param struct {
+		OfficeID int32 `json:"officeID" binding:"required"`
+	}
 
-	officeIDparam, err := strconv.Atoi(c.Param("officeID"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Param officeID must be an integer"})
+	if err := c.ShouldBindJSON(&param); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	officeID = int32(officeIDparam)
-
-	err = apiCfg.DB.DeleteOffice(c, officeID)
+	err = apiCfg.DB.DeleteOffice(c, param.OfficeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Office deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Office deleted successfully",
+		"data":    nil,
+	})
 }
 
 // ListOfficeAll lists all offices
@@ -93,5 +96,31 @@ func (apiCfg *apiConfig) ListOfficeAll(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, offices)
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "success",
+		"data": offices,
+	})
+}
+
+// ListOfficeByLabID lists all offices in a lab
+func (apiCfg *apiConfig) ListOfficeByLabID(c *gin.Context) {
+	var labid int64
+
+	// 解析参数
+	labid, err = strconv.ParseInt(c.Query("labid"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parameter error " + err.Error()})
+		return
+	}
+
+	offices, err := apiCfg.DB.ListOfficeByLabID(c.Request.Context(), int32(labid))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "success",
+		"data": offices,
+	})
 }

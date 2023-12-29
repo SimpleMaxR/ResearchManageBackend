@@ -41,17 +41,31 @@ func Init() {
 	router.POST("/createResearcher", apiCfg.HandlerCreateResearcher)
 	router.DELETE("/deleteResearcher", apiCfg.HandlerDeleteResearcher)
 	router.PUT("/updateResearcher", apiCfg.HandlerUpdateResearcher)
+	router.GET("/listResearcherByLabID", apiCfg.HandlerListResearcherByLab)
 
 	// Secretary 相关接口
-	router.GET("/listSecretaryAll", apiCfg.CreateSecretary)
+	router.GET("/createSecretary", apiCfg.CreateSecretary)
 	router.POST("/setSecretary", apiCfg.SetSecretary)
 	router.DELETE("/deleteSecretary", apiCfg.DeleteSecretary)
+	router.GET("/listSecretaryServiceByLabID", apiCfg.ListSecretaryServiceByLab)
+	router.GET("/listSecretaryByLabID", apiCfg.ListSecretaryByLab)
+	router.GET("/listSecretaryAll", apiCfg.ListSecretaryAll)
 
 	// Office 相关接口
 	router.GET("/listOfficeAll", apiCfg.ListOfficeAll)
 	router.POST("/createOffice", apiCfg.CreateOffice)
 	router.DELETE("/deleteOffice", apiCfg.DeleteOffice)
 	router.PUT("/updateOffice", apiCfg.UpdateOffice)
+	router.GET("/listOfficeByLabID", apiCfg.ListOfficeByLabID)
+
+	// QM 相关接口
+	router.POST("/createQM", apiCfg.CreateQM)
+	router.GET("/getQMByProjectID", apiCfg.GetQMByProjectID)
+
+	// Client 相关接口
+	router.POST("/createClient", apiCfg.CreateClient)
+	router.PUT("/updateClient", apiCfg.UpdateClient)
+	router.GET("/getClientByProjectID", apiCfg.GetClientByProjectID)
 
 	// Project 相关接口
 	router.GET("/listProjectAll", apiCfg.ListProjectAll)
@@ -59,6 +73,7 @@ func Init() {
 	router.DELETE("/deleteProject", apiCfg.DeleteProject)
 	router.PUT("/updateProject", apiCfg.UpdateProject)
 	router.PUT("/linkProjectPartner", apiCfg.LinkProjectPartner)
+	router.GET("/listProjectPartner", apiCfg.ListProjectPartner)
 
 	// Partner 相关接口
 	router.POST("/createPartner", apiCfg.CreatePartner)
@@ -68,17 +83,6 @@ func Init() {
 	// Leader 相关接口
 	router.POST("/createLeader", apiCfg.CreateLeader)
 	router.GET("/getLeaderById", apiCfg.GetLeader)
-
-	// QM 相关接口
-	router.POST("/createQM", apiCfg.CreateQM)
-	router.GET("/getQMByProjectID", apiCfg.GetQMByProjectID)
-	router.PUT("setQMContact", apiCfg.SetQMContact)
-
-	// Client 相关接口
-	router.POST("/createClient", apiCfg.CreateClient)
-	router.PUT("/updateClient", apiCfg.UpdateClient)
-	router.PUT("/createClientContact", apiCfg.CreateClientContact)
-	router.GET("/getClientByProjectID", apiCfg.GetClientByProjectID)
 
 	// Achievement 相关接口
 	router.POST("/createAchievement", apiCfg.CreateAchievement)

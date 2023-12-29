@@ -2,8 +2,6 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
-	"ResearchManage/utils"
-	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +23,9 @@ func (apiCfg *apiConfig) HandlerListResearcherAll(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"researcherList": researcherList,
+		"code": 200,
+		"msg":  "success",
+		"data": researcherList,
 	})
 }
 
@@ -43,7 +43,7 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 		Title             string `json:"Title" binding:"required"`
 		Age               int32  `json:"Age" binding:"required"`
 		Email             string `json:"Email" binding:"required"`
-		Leader            bool   `json:"Leader" binding:"required"`
+		Leader            bool   `json:"Leader"`
 		StartDate         string `json:"StartDate"`
 		Term              int32  `json:"Term"`
 		Researchdirection string `json:"Researchdirection"`
@@ -58,22 +58,16 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 
 	// 插入数据库
 	id, err := apiCfg.DB.CreateResearcher(c.Request.Context(), database.CreateResearcherParams{
-		LabID:            researcherInfo.LabID,
-		ResearcherNumber: researcherInfo.ResearcherNumber,
-		Name:             researcherInfo.Name,
-		Gender:           researcherInfo.Gender,
-		Title:            researcherInfo.Title,
-		Age:              researcherInfo.Age,
-		Emailaddress:     researcherInfo.Email,
-		Leader:           researcherInfo.Leader,
-		Startdate: sql.NullTime{
-			Time:  utils.StringToTime(researcherInfo.StartDate),
-			Valid: researcherInfo.Leader,
-		},
-		Term: sql.NullInt32{
-			Int32: researcherInfo.Term,
-			Valid: researcherInfo.Leader,
-		},
+		LabID:             researcherInfo.LabID,
+		ResearcherNumber:  researcherInfo.ResearcherNumber,
+		Name:              researcherInfo.Name,
+		Gender:            researcherInfo.Gender,
+		Title:             researcherInfo.Title,
+		Age:               researcherInfo.Age,
+		Emailaddress:      researcherInfo.Email,
+		Leader:            researcherInfo.Leader,
+		Startdate:         researcherInfo.StartDate,
+		Term:              researcherInfo.Term,
 		Researchdirection: researcherInfo.Researchdirection,
 	})
 	if err != nil {
@@ -85,7 +79,9 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"researcherID": id,
+		"code": 200,
+		"msg":  "success",
+		"data": id,
 	})
 }
 
@@ -116,7 +112,9 @@ func (apiCfg *apiConfig) HandlerDeleteResearcher(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"researcherInfo": researcherInfo,
+		"code": 200,
+		"msg":  "success",
+		"data": researcherInfo,
 	})
 }
 
@@ -134,6 +132,7 @@ func (apiCfg *apiConfig) HandlerUpdateResearcher(c *gin.Context) {
 		Age               int32  `json:"Age" binding:"required"`
 		Researchdirection string `json:"Researchdirection"`
 		Leader            bool   `json:"Leader" binding:"required"`
+		ResearcherID      int32  `json:"ResearcherID" binding:"required"`
 	}
 
 	if err = c.ShouldBindJSON(&researcherInfo); err != nil {
@@ -145,6 +144,7 @@ func (apiCfg *apiConfig) HandlerUpdateResearcher(c *gin.Context) {
 
 	// 更新数据库
 	researcher, err := apiCfg.DB.UpdateResearcher(c.Request.Context(), database.UpdateResearcherParams{
+		Researcherid:      researcherInfo.ResearcherID,
 		LabID:             researcherInfo.LabID,
 		Name:              researcherInfo.Name,
 		Gender:            researcherInfo.Gender,
@@ -162,7 +162,9 @@ func (apiCfg *apiConfig) HandlerUpdateResearcher(c *gin.Context) {
 		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"researcher_updated": researcher,
+			"code": 200,
+			"msg":  "success",
+			"data": researcher,
 		})
 		return
 	}
@@ -195,6 +197,8 @@ func (apiCfg *apiConfig) HandlerListResearcherByLab(c *gin.Context) {
 
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
-		"researcherList": researcherList,
+		"code": 200,
+		"msg":  "success",
+		"data": researcherList,
 	})
 }

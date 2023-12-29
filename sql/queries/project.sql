@@ -1,9 +1,9 @@
 -- name: CreateProject :one
-INSERT INTO projects (peojectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO projects (projectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING projectid;
 
 -- name: UpdateProject :one
-UPDATE projects SET peojectleader = $2, name = $3, researchcontent = $4, totalfunds = $5, startdate = $6, enddate = $7, qualitymonitorsid = $8, clientid = $9 WHERE projectid = $1
+UPDATE projects SET projectleader = $2, name = $3, researchcontent = $4, totalfunds = $5, startdate = $6, enddate = $7, qualitymonitorsid = $8, clientid = $9 WHERE projectid = $1
 RETURNING *;
 
 -- name: DeleteProject :exec

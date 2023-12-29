@@ -14,3 +14,6 @@ SELECT * FROM offices;
 
 -- name: GetOfficeByLab :one
 SELECT * FROM offices WHERE lab_id = $1;
+
+-- name: ListOfficeByLabID :many
+SELECT * FROM offices WHERE lab_id = $1;

@@ -24,19 +24,10 @@ type Client struct {
 	Name     string
 	Address  string
 	// 委托方负责人
-	Leaderid    int32
-	Officephone string
-}
-
-type Contact struct {
-	Contactid    int32
-	Name         string
+	Leaderid     int32
 	Officephone  string
-	Mobilephone  string
-	Emailaddress string
-	Baseclient   sql.NullInt32
-	Basepartners sql.NullInt32
-	Baseqm       sql.NullInt32
+	Contactname  string
+	Contactphone string
 }
 
 type Equipment struct {
@@ -65,7 +56,6 @@ type Laboratory struct {
 type Leader struct {
 	Leaderid     int32
 	Name         string
-	Officephone  string
 	Mobilephone  string
 	Emailaddress string
 }
@@ -87,8 +77,10 @@ type Partner struct {
 	Name      string
 	Address   string
 	// 合作方负责人
-	Leaderid    int32
-	Officephone string
+	Leaderid     int32
+	Officephone  string
+	Contactname  string
+	Contactphone string
 }
 
 type Patent struct {
@@ -98,7 +90,7 @@ type Patent struct {
 
 type Project struct {
 	Projectid         int32
-	Peojectleader     int32
+	Projectleader     int32
 	Name              string
 	Researchcontent   string
 	Totalfunds        float64
@@ -127,10 +119,12 @@ type Projectresearcher struct {
 }
 
 type Qualitymonitor struct {
-	Monitorid int32
-	Name      string
-	Address   string
-	Leaderid  int32
+	Monitorid    int32
+	Name         string
+	Address      string
+	Leaderid     int32
+	Contactname  string
+	Contactphone string
 }
 
 type Researcher struct {
@@ -143,8 +137,8 @@ type Researcher struct {
 	Age               int32
 	Emailaddress      string
 	Leader            bool
-	Startdate         sql.NullTime
-	Term              sql.NullInt32
+	Startdate         string
+	Term              int32
 	Researchdirection string
 }
 
