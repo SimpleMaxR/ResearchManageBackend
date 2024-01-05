@@ -31,6 +31,7 @@ func Init() {
 	// Lab 相关接口
 	router.GET("/listLabAll", apiCfg.HandlerListLabAll)
 	router.GET("/listLabByLabID", apiCfg.HandlerListLabByLabID)
+	router.GET("/listLabByName", apiCfg.HandlerListLabByName)
 	router.POST("/createLab", apiCfg.HandlerCreateLab)
 	router.DELETE("/deleteLab", apiCfg.HandlerDeleteLab)
 	router.PUT("/updateLab", apiCfg.HandlerUpdateLab)
@@ -42,6 +43,7 @@ func Init() {
 	router.DELETE("/deleteResearcher", apiCfg.HandlerDeleteResearcher)
 	router.PUT("/updateResearcher", apiCfg.HandlerUpdateResearcher)
 	router.GET("/listResearcherByLabID", apiCfg.HandlerListResearcherByLab)
+	router.GET("/listResearcherByID", apiCfg.HandlerListResearcherByID)
 
 	// Secretary 相关接口
 	router.GET("/createSecretary", apiCfg.CreateSecretary)
@@ -61,6 +63,8 @@ func Init() {
 	// QM 相关接口
 	router.POST("/createQM", apiCfg.CreateQM)
 	router.GET("/getQMByProjectID", apiCfg.GetQMByProjectID)
+	router.GET("/getQMByID", apiCfg.GetQMByID)
+	router.GET("/listQMAll", apiCfg.ListQMAll)
 
 	// Client 相关接口
 	router.POST("/createClient", apiCfg.CreateClient)
@@ -69,11 +73,22 @@ func Init() {
 
 	// Project 相关接口
 	router.GET("/listProjectAll", apiCfg.ListProjectAll)
+	router.GET("/listProjectByName", apiCfg.ListProjectByName)
 	router.POST("/createProject", apiCfg.CreateProject)
 	router.DELETE("/deleteProject", apiCfg.DeleteProject)
 	router.PUT("/updateProject", apiCfg.UpdateProject)
 	router.PUT("/linkProjectPartner", apiCfg.LinkProjectPartner)
 	router.GET("/listProjectPartner", apiCfg.ListProjectPartner)
+
+	router.GET("/linkProjectResearcher", apiCfg.LinkProjectResearcher)
+	router.GET("/listProjectResearcher", apiCfg.ListProjectResearcher)
+
+	// Subtopic 相关接口
+	router.POST("/createSubtopic", apiCfg.CreateSubtopic)
+	router.DELETE("/deleteSubtopic", apiCfg.DeleteSubtopic)
+	router.PUT("/updateSubtopic", apiCfg.UpdateSubtopic)
+	router.GET("/listSubtopicByProject", apiCfg.ListSubtopicByProject)
+	router.GET("/listSubtopicByLeader", apiCfg.ListSubtopicByLeader)
 
 	// Partner 相关接口
 	router.POST("/createPartner", apiCfg.CreatePartner)
@@ -92,6 +107,9 @@ func Init() {
 
 	// 登陆
 	router.POST("/login", apiCfg.HandlerAdminLogin)
+
+	// Dashboard
+	router.GET("/overview", apiCfg.HandlerOverview)
 
 	err := router.Run("localhost:" + os.Getenv("PORT"))
 	if err != nil {

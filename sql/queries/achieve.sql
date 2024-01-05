@@ -1,7 +1,7 @@
 -- achievements
 
 -- name: CreateAchievement :one
-INSERT INTO achievements (name, obtaineddate, contributorid, baseproject, basesubtopic, type) VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO achievements (name, obtaine, baseproject, basesubtopic, type) VALUES ($1, $2, $3, $4, $5)
 RETURNING achievementid;
 
 -- name: DeleteAchievement :exec

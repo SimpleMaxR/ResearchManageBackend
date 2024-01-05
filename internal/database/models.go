@@ -6,14 +6,12 @@ package database
 
 import (
 	"database/sql"
-	"time"
 )
 
 type Achievement struct {
 	Achievementid int32
 	Name          string
-	Obtaineddate  string
-	Contributorid int32
+	Obtaine       string
 	Baseproject   int32
 	Basesubtopic  int32
 	Type          int32
@@ -100,22 +98,16 @@ type Project struct {
 	Clientid          int32
 }
 
-type Projectachievement struct {
-	Projectid     int32
-	Achievementid int32
-}
-
 type Projectpartner struct {
 	Projectid int32
 	Partnerid int32
 }
 
 type Projectresearcher struct {
-	Projectid       int32
-	Researcherid    int32
-	Joindate        time.Time
-	Workload        float64
-	Disposablefunds float64
+	Projectid    int32
+	Researcherid int32
+	Joindate     string
+	Workload     string
 }
 
 type Qualitymonitor struct {
@@ -165,11 +157,12 @@ type Softwareright struct {
 type Subtopic struct {
 	Subtopicid int32
 	Projectid  int32
+	Name       string
 	Leaderid   int32
 	// DDL日期
-	Enddaterequirement  string
-	Disposablefunds     float64
-	Technicalindicators string
+	Enddate string
+	Fund    float64
+	Tech    string
 }
 
 type User struct {

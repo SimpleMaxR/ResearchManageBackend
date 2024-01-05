@@ -10,32 +10,43 @@ import (
 )
 
 const createSubtopic = `-- name: CreateSubtopic :one
-INSERT INTO subtopics (projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators) VALUES ($1, $2, $3, $4, $5) RETURNING subtopicid
+INSERT INTO subtopics (projectid, leaderid, name, enddate, fund, tech)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING subtopicid, projectid, name, leaderid, enddate, fund, tech
 `
 
 type CreateSubtopicParams struct {
-	Projectid           int32
-	Leaderid            int32
-	Enddaterequirement  string
-	Disposablefunds     float64
-	Technicalindicators string
+	Projectid int32
+	Leaderid  int32
+	Name      string
+	Enddate   string
+	Fund      float64
+	Tech      string
 }
 
-func (q *Queries) CreateSubtopic(ctx context.Context, arg CreateSubtopicParams) (int32, error) {
+func (q *Queries) CreateSubtopic(ctx context.Context, arg CreateSubtopicParams) (Subtopic, error) {
 	row := q.db.QueryRowContext(ctx, createSubtopic,
 		arg.Projectid,
 		arg.Leaderid,
-		arg.Enddaterequirement,
-		arg.Disposablefunds,
-		arg.Technicalindicators,
+		arg.Name,
+		arg.Enddate,
+		arg.Fund,
+		arg.Tech,
 	)
-	var subtopicid int32
-	err := row.Scan(&subtopicid)
-	return subtopicid, err
+	var i Subtopic
+	err := row.Scan(
+		&i.Subtopicid,
+		&i.Projectid,
+		&i.Name,
+		&i.Leaderid,
+		&i.Enddate,
+		&i.Fund,
+		&i.Tech,
+	)
+	return i, err
 }
 
 const deleteSubtopic = `-- name: DeleteSubtopic :exec
-DELETE FROM subtopics WHERE subtopicid=$1
+DELETE FROM subtopics WHERE subtopicid = $1
 `
 
 func (q *Queries) DeleteSubtopic(ctx context.Context, subtopicid int32) error {
@@ -43,30 +54,12 @@ func (q *Queries) DeleteSubtopic(ctx context.Context, subtopicid int32) error {
 	return err
 }
 
-const getSubtopic = `-- name: GetSubtopic :one
-SELECT subtopicid, projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators FROM subtopics WHERE subtopicid=$1
+const listSubtopicByLeader = `-- name: ListSubtopicByLeader :many
+SELECT subtopicid, projectid, name, leaderid, enddate, fund, tech from subtopics WHERE subtopics.leaderid = $1
 `
 
-func (q *Queries) GetSubtopic(ctx context.Context, subtopicid int32) (Subtopic, error) {
-	row := q.db.QueryRowContext(ctx, getSubtopic, subtopicid)
-	var i Subtopic
-	err := row.Scan(
-		&i.Subtopicid,
-		&i.Projectid,
-		&i.Leaderid,
-		&i.Enddaterequirement,
-		&i.Disposablefunds,
-		&i.Technicalindicators,
-	)
-	return i, err
-}
-
-const getSubtopicByLeader = `-- name: GetSubtopicByLeader :many
-SELECT subtopicid, projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators FROM subtopics WHERE leaderid=$1
-`
-
-func (q *Queries) GetSubtopicByLeader(ctx context.Context, leaderid int32) ([]Subtopic, error) {
-	rows, err := q.db.QueryContext(ctx, getSubtopicByLeader, leaderid)
+func (q *Queries) ListSubtopicByLeader(ctx context.Context, leaderid int32) ([]Subtopic, error) {
+	rows, err := q.db.QueryContext(ctx, listSubtopicByLeader, leaderid)
 	if err != nil {
 		return nil, err
 	}
@@ -77,10 +70,11 @@ func (q *Queries) GetSubtopicByLeader(ctx context.Context, leaderid int32) ([]Su
 		if err := rows.Scan(
 			&i.Subtopicid,
 			&i.Projectid,
+			&i.Name,
 			&i.Leaderid,
-			&i.Enddaterequirement,
-			&i.Disposablefunds,
-			&i.Technicalindicators,
+			&i.Enddate,
+			&i.Fund,
+			&i.Tech,
 		); err != nil {
 			return nil, err
 		}
@@ -95,12 +89,12 @@ func (q *Queries) GetSubtopicByLeader(ctx context.Context, leaderid int32) ([]Su
 	return items, nil
 }
 
-const getSubtopicByProject = `-- name: GetSubtopicByProject :many
-SELECT subtopicid, projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators FROM subtopics WHERE projectid=$1
+const listSubtopicByProject = `-- name: ListSubtopicByProject :many
+SELECT subtopicid, projectid, name, leaderid, enddate, fund, tech from subtopics WHERE subtopics.projectid = $1
 `
 
-func (q *Queries) GetSubtopicByProject(ctx context.Context, projectid int32) ([]Subtopic, error) {
-	rows, err := q.db.QueryContext(ctx, getSubtopicByProject, projectid)
+func (q *Queries) ListSubtopicByProject(ctx context.Context, projectid int32) ([]Subtopic, error) {
+	rows, err := q.db.QueryContext(ctx, listSubtopicByProject, projectid)
 	if err != nil {
 		return nil, err
 	}
@@ -111,10 +105,11 @@ func (q *Queries) GetSubtopicByProject(ctx context.Context, projectid int32) ([]
 		if err := rows.Scan(
 			&i.Subtopicid,
 			&i.Projectid,
+			&i.Name,
 			&i.Leaderid,
-			&i.Enddaterequirement,
-			&i.Disposablefunds,
-			&i.Technicalindicators,
+			&i.Enddate,
+			&i.Fund,
+			&i.Tech,
 		); err != nil {
 			return nil, err
 		}
@@ -130,35 +125,38 @@ func (q *Queries) GetSubtopicByProject(ctx context.Context, projectid int32) ([]
 }
 
 const updateSubtopic = `-- name: UpdateSubtopic :one
-UPDATE subtopics SET projectid=$2, leaderid=$3, enddaterequirement=$4, disposablefunds=$5, technicalindicators=$6 WHERE subtopicid=$1 RETURNING subtopicid, projectid, leaderid, enddaterequirement, disposablefunds, technicalindicators
+UPDATE subtopics SET projectid = $1, leaderid = $2, enddate = $3, fund = $4, tech = $5, name = $6 WHERE subtopicid = $7 RETURNING subtopicid, projectid, name, leaderid, enddate, fund, tech
 `
 
 type UpdateSubtopicParams struct {
-	Subtopicid          int32
-	Projectid           int32
-	Leaderid            int32
-	Enddaterequirement  string
-	Disposablefunds     float64
-	Technicalindicators string
+	Projectid  int32
+	Leaderid   int32
+	Enddate    string
+	Fund       float64
+	Tech       string
+	Name       string
+	Subtopicid int32
 }
 
 func (q *Queries) UpdateSubtopic(ctx context.Context, arg UpdateSubtopicParams) (Subtopic, error) {
 	row := q.db.QueryRowContext(ctx, updateSubtopic,
-		arg.Subtopicid,
 		arg.Projectid,
 		arg.Leaderid,
-		arg.Enddaterequirement,
-		arg.Disposablefunds,
-		arg.Technicalindicators,
+		arg.Enddate,
+		arg.Fund,
+		arg.Tech,
+		arg.Name,
+		arg.Subtopicid,
 	)
 	var i Subtopic
 	err := row.Scan(
 		&i.Subtopicid,
 		&i.Projectid,
+		&i.Name,
 		&i.Leaderid,
-		&i.Enddaterequirement,
-		&i.Disposablefunds,
-		&i.Technicalindicators,
+		&i.Enddate,
+		&i.Fund,
+		&i.Tech,
 	)
 	return i, err
 }

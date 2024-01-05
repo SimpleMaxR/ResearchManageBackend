@@ -26,7 +26,7 @@ DELETE FROM qualitymonitors WHERE monitorid = $1;
 -- name: GetQMById :one
 SELECT * FROM qualitymonitors WHERE monitorid = $1;
 
--- name: ListQM :one
+-- name: ListQM :many
 SELECT * FROM qualitymonitors;
 
 

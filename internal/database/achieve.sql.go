@@ -11,25 +11,23 @@ import (
 
 const createAchievement = `-- name: CreateAchievement :one
 
-INSERT INTO achievements (name, obtaineddate, contributorid, baseproject, basesubtopic, type) VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO achievements (name, obtaine, baseproject, basesubtopic, type) VALUES ($1, $2, $3, $4, $5)
 RETURNING achievementid
 `
 
 type CreateAchievementParams struct {
-	Name          string
-	Obtaineddate  string
-	Contributorid int32
-	Baseproject   int32
-	Basesubtopic  int32
-	Type          int32
+	Name         string
+	Obtaine      string
+	Baseproject  int32
+	Basesubtopic int32
+	Type         int32
 }
 
 // achievements
 func (q *Queries) CreateAchievement(ctx context.Context, arg CreateAchievementParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createAchievement,
 		arg.Name,
-		arg.Obtaineddate,
-		arg.Contributorid,
+		arg.Obtaine,
 		arg.Baseproject,
 		arg.Basesubtopic,
 		arg.Type,
@@ -49,7 +47,7 @@ func (q *Queries) DeleteAchievement(ctx context.Context, achievementid int32) er
 }
 
 const listAchievementByProject = `-- name: ListAchievementByProject :many
-SELECT achievementid, name, obtaineddate, contributorid, baseproject, basesubtopic, type FROM achievements WHERE baseproject = $1
+SELECT achievementid, name, obtaine, baseproject, basesubtopic, type FROM achievements WHERE baseproject = $1
 `
 
 func (q *Queries) ListAchievementByProject(ctx context.Context, baseproject int32) ([]Achievement, error) {
@@ -64,8 +62,7 @@ func (q *Queries) ListAchievementByProject(ctx context.Context, baseproject int3
 		if err := rows.Scan(
 			&i.Achievementid,
 			&i.Name,
-			&i.Obtaineddate,
-			&i.Contributorid,
+			&i.Obtaine,
 			&i.Baseproject,
 			&i.Basesubtopic,
 			&i.Type,
@@ -84,7 +81,7 @@ func (q *Queries) ListAchievementByProject(ctx context.Context, baseproject int3
 }
 
 const listAchievementBySubtopic = `-- name: ListAchievementBySubtopic :many
-SELECT achievementid, name, obtaineddate, contributorid, baseproject, basesubtopic, type FROM achievements WHERE basesubtopic = $1
+SELECT achievementid, name, obtaine, baseproject, basesubtopic, type FROM achievements WHERE basesubtopic = $1
 `
 
 func (q *Queries) ListAchievementBySubtopic(ctx context.Context, basesubtopic int32) ([]Achievement, error) {
@@ -99,8 +96,7 @@ func (q *Queries) ListAchievementBySubtopic(ctx context.Context, basesubtopic in
 		if err := rows.Scan(
 			&i.Achievementid,
 			&i.Name,
-			&i.Obtaineddate,
-			&i.Contributorid,
+			&i.Obtaine,
 			&i.Baseproject,
 			&i.Basesubtopic,
 			&i.Type,

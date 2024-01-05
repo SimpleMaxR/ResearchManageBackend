@@ -15,6 +15,9 @@ SELECT * FROM projects;
 -- name: GetProjectById :one
 SELECT * FROM projects WHERE projectid = $1;
 
+-- name: GetProjectByName :many
+SELECT * FROM projects WHERE Name LIKE '%' || $1 || '%';
+
 
 -- ProjectPartner
 
@@ -32,10 +35,10 @@ SELECT * FROM partners WHERE partnerid IN (SELECT partnerid FROM projectpartners
 -- ProjectResearcher
 
 -- name: LinkProjectResearcher :exec
-INSERT INTO projectResearchers (projectid, researcherid, joindate, workload, disposablefunds) VALUES ($1, $2, $3, $4, $5);
+INSERT INTO projectResearchers (projectid, researcherid, joindate, workload) VALUES ($1, $2, $3, $4);
 
 -- name: UnlinkProjectResearcher :exec
 DELETE FROM projectResearchers WHERE projectid = $1 AND researcherid = $2;
 
 -- name: ListProjectResearcher :many
-SELECT * FROM researchers WHERE researcherid IN (SELECT researcherid FROM projectResearchers WHERE projectid = $1);
+SELECT researcherid FROM projectResearchers WHERE projectid = $1;

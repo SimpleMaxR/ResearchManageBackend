@@ -2,6 +2,7 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
+	"database/sql"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -29,11 +30,43 @@ func (apiCfg *apiConfig) ListProjectAll(c *gin.Context) {
 	})
 }
 
+func (apiCfg *apiConfig) ListProjectByName(c *gin.Context) {
+	var (
+		err  error
+		name string
+	)
+
+	// 获取参数
+	name, exist := c.GetQuery("name")
+	if exist == false {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 查询数据库
+	project, err := apiCfg.DB.GetProjectByName(c.Request.Context(), sql.NullString{
+		String: name,
+		Valid:  exist,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 返回数据
+	c.JSON(http.StatusOK, gin.H{
+		"data": project,
+	})
+}
+
 // CreateProject handles the creation of a new project
 func (apiCfg *apiConfig) CreateProject(c *gin.Context) {
 	var (
-		LeaderId int32
-		params   struct {
+		params struct {
 			Name            string  `json:"projectName" binding:"required"`
 			ResearchContent string  `json:"researchContent" binding:"required"`
 			Fund            float64 `json:"fund" binding:"required"`
@@ -41,11 +74,7 @@ func (apiCfg *apiConfig) CreateProject(c *gin.Context) {
 			EndDate         string  `json:"endDate" binding:"required"`
 			QualityMonitor  int32   `json:"qualityMonitor" binding:"required"`
 			ClientId        int32   `json:"clientId" binding:"required"`
-			Leader          struct {
-				Name        string `json:"name" binding:"required"`
-				MobilePhone string `json:"mobilePhone" binding:"required"`
-				Email       string `json:"email" binding:"required"`
-			}
+			Projectleader   int32   `json:"projectleader" binding:"required"`
 		}
 	)
 
@@ -55,45 +84,8 @@ func (apiCfg *apiConfig) CreateProject(c *gin.Context) {
 		return
 	}
 
-	// 新建 leader
-	// 查询是否已经存在
-	isLeaderExist, err := apiCfg.DB.IsLeaderExists(c.Request.Context(), database.IsLeaderExistsParams{
-		Name:         params.Leader.Name,
-		Mobilephone:  params.Leader.MobilePhone,
-		Emailaddress: params.Leader.Email,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 如果存在，获取 id, 否则新建
-	if isLeaderExist {
-		leaderId, err := apiCfg.DB.GetLeaderIdByInfo(c.Request.Context(), database.GetLeaderIdByInfoParams{
-			Name:         params.Leader.Name,
-			Mobilephone:  params.Leader.MobilePhone,
-			Emailaddress: params.Leader.Email,
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		LeaderId = leaderId
-	} else {
-		leaderId, err := apiCfg.DB.CreateLeader(c.Request.Context(), database.CreateLeaderParams{
-			Name:         params.Leader.Name,
-			Mobilephone:  params.Leader.MobilePhone,
-			Emailaddress: params.Leader.Email,
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		LeaderId = leaderId
-	}
-
 	projectID, err := apiCfg.DB.CreateProject(c.Request.Context(), database.CreateProjectParams{
-		Projectleader:     LeaderId,
+		Projectleader:     params.Projectleader,
 		Name:              params.Name,
 		Researchcontent:   params.ResearchContent,
 		Totalfunds:        params.Fund,
@@ -188,5 +180,55 @@ func (apiCfg *apiConfig) ListProjectPartner(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"msg":  "success",
 		"data": projectPartnerList,
+	})
+}
+
+func (apiCfg *apiConfig) LinkProjectResearcher(c *gin.Context) {
+	var params struct {
+		ProjectId  int32  `json:"projectId" binding:"required"`
+		Researcher int32  `json:"researcherid" binding:"required"`
+		Join       string `json:"joindate" binding:"required"`
+		Workload   string `json:"workload" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := apiCfg.DB.LinkProjectResearcher(c.Request.Context(), database.LinkProjectResearcherParams{
+		Projectid:    params.ProjectId,
+		Researcherid: params.Researcher,
+		Joindate:     params.Join,
+		Workload:     params.Workload,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "success",
+		"data": nil,
+	})
+}
+
+func (apiCfg *apiConfig) ListProjectResearcher(c *gin.Context) {
+	var projectId int64
+	projectId, err := strconv.ParseInt(c.Query("projectId"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	projectResearcherList, err := apiCfg.DB.ListProjectResearcher(c.Request.Context(), int32(projectId))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "ok",
+		"data": projectResearcherList,
 	})
 }

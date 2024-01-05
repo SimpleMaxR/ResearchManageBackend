@@ -187,7 +187,7 @@ func (apiCfg *apiConfig) CreateQM(c *gin.Context) {
 }
 
 // ListQM handles listing all qms
-func (apiCfg *apiConfig) ListQM(c *gin.Context) {
+func (apiCfg *apiConfig) ListQMAll(c *gin.Context) {
 	var (
 		err error
 	)
@@ -245,6 +245,36 @@ func (apiCfg *apiConfig) GetQMByProjectID(c *gin.Context) {
 		"data": qm,
 	})
 
+}
+
+// GetQMByID
+func (apiCfg *apiConfig) GetQMByID(c *gin.Context) {
+	var (
+		err error
+		id  int64
+	)
+
+	// 解析参数
+	id, err = strconv.ParseInt(c.Query("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id is required"})
+		return
+	}
+
+	// 查询数据库
+	qm, err := apiCfg.DB.GetQMById(c.Request.Context(), int32(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 返回数据
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "success",
+		"data": qm,
+	})
 }
 
 // Partners 相关接口

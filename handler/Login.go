@@ -66,10 +66,13 @@ func setToken(c *gin.Context, user database.User) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  errmsg.SUCCESS,
-		"message": errmsg.GetErrMsg(errmsg.SUCCESS),
-		"token":   token,
-		"userid":  user.Userid,
-		"role":    user.Roleid,
+		"msg": "ok",
+		"data": gin.H{
+			"status":  errmsg.SUCCESS,
+			"message": errmsg.GetErrMsg(errmsg.SUCCESS),
+			"token":   token,
+			"userid":  user.Userid,
+			"role":    user.Roleid,
+		},
 	})
 }

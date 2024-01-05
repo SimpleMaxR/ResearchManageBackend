@@ -21,6 +21,9 @@ RETURNING *;
 -- name: ListResearcherByLab :many
 SELECT * FROM Researchers WHERE lab_id = $1;
 
+-- name: ListResearcherByID :one
+SELECT * FROM Researchers WHERE ResearcherID = $1;
+
 
 -- -- Director queries
 

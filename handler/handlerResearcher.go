@@ -3,6 +3,7 @@ package handler
 import (
 	"ResearchManage/internal/database"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,6 +27,38 @@ func (apiCfg *apiConfig) HandlerListResearcherAll(c *gin.Context) {
 		"code": 200,
 		"msg":  "success",
 		"data": researcherList,
+	})
+}
+
+func (apiCfg *apiConfig) HandlerListResearcherByID(c *gin.Context) {
+	var (
+		err error
+		id  int64
+	)
+
+	// 获取参数
+	id, err = strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 查询数据库
+	researcherInfo, err := apiCfg.DB.ListResearcherByID(c.Request.Context(), int32(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 返回数据
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "success",
+		"data": researcherInfo,
 	})
 }
 
@@ -88,13 +121,12 @@ func (apiCfg *apiConfig) HandlerCreateResearcher(c *gin.Context) {
 func (apiCfg *apiConfig) HandlerDeleteResearcher(c *gin.Context) {
 	var (
 		err error
+		id  int64
 	)
 
 	// 获取参数
-	var researcher struct {
-		ResearcherID int `json:"ResearcherID"`
-	}
-	if err = c.ShouldBindJSON(&researcher); err != nil {
+	id, err = strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -102,7 +134,7 @@ func (apiCfg *apiConfig) HandlerDeleteResearcher(c *gin.Context) {
 	}
 
 	// 删除数据库
-	researcherInfo, err := apiCfg.DB.DeleteResearcher(c.Request.Context(), int32(researcher.ResearcherID))
+	researcherInfo, err := apiCfg.DB.DeleteResearcher(c.Request.Context(), int32(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -131,7 +163,7 @@ func (apiCfg *apiConfig) HandlerUpdateResearcher(c *gin.Context) {
 		Title             string `json:"Title" binding:"required"`
 		Age               int32  `json:"Age" binding:"required"`
 		Researchdirection string `json:"Researchdirection"`
-		Leader            bool   `json:"Leader" binding:"required"`
+		Leader            bool   `json:"Leader"`
 		ResearcherID      int32  `json:"ResearcherID" binding:"required"`
 	}
 
@@ -172,14 +204,13 @@ func (apiCfg *apiConfig) HandlerUpdateResearcher(c *gin.Context) {
 
 func (apiCfg *apiConfig) HandlerListResearcherByLab(c *gin.Context) {
 	var (
-		err error
+		err   error
+		labid int64
 	)
 
 	// 获取参数
-	var lab struct {
-		LabID int32 `json:"LabID"`
-	}
-	if err = c.ShouldBindJSON(&lab); err != nil {
+	labid, err = strconv.ParseInt(c.Query("labid"), 10, 64)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -187,7 +218,7 @@ func (apiCfg *apiConfig) HandlerListResearcherByLab(c *gin.Context) {
 	}
 
 	// 查询数据库
-	researcherList, err := apiCfg.DB.ListResearcherByLab(c.Request.Context(), lab.LabID)
+	researcherList, err := apiCfg.DB.ListResearcherByLab(c.Request.Context(), int32(labid))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

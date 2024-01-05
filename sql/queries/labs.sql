@@ -11,6 +11,9 @@ SELECT * FROM laboratories WHERE lab_id = $1;
 -- name: ListLabAll :many
 SELECT * FROM Laboratories;
 
+-- name: ListLabByName :many
+SELECT * FROM Laboratories WHERE Name LIKE '%' || $1 || '%';
+
 -- name: CreateLab :one
 INSERT INTO Laboratories (Name, office_area, Address, research_direction) VALUES ($1, $2, $3, $4) 
 RETURNING *;

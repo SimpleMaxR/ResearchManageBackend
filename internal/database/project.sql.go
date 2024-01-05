@@ -7,7 +7,7 @@ package database
 
 import (
 	"context"
-	"time"
+	"database/sql"
 )
 
 const createProject = `-- name: CreateProject :one
@@ -107,6 +107,43 @@ func (q *Queries) GetProjectById(ctx context.Context, projectid int32) (Project,
 	return i, err
 }
 
+const getProjectByName = `-- name: GetProjectByName :many
+SELECT projectid, projectleader, name, researchcontent, totalfunds, startdate, enddate, qualitymonitorsid, clientid FROM projects WHERE Name LIKE '%' || $1 || '%'
+`
+
+func (q *Queries) GetProjectByName(ctx context.Context, dollar_1 sql.NullString) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, getProjectByName, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Project
+	for rows.Next() {
+		var i Project
+		if err := rows.Scan(
+			&i.Projectid,
+			&i.Projectleader,
+			&i.Name,
+			&i.Researchcontent,
+			&i.Totalfunds,
+			&i.Startdate,
+			&i.Enddate,
+			&i.Qualitymonitorsid,
+			&i.Clientid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const linkProjectPartner = `-- name: LinkProjectPartner :exec
 
 INSERT INTO projectpartners (projectid, partnerid) VALUES ($1, $2)
@@ -125,15 +162,14 @@ func (q *Queries) LinkProjectPartner(ctx context.Context, arg LinkProjectPartner
 
 const linkProjectResearcher = `-- name: LinkProjectResearcher :exec
 
-INSERT INTO projectResearchers (projectid, researcherid, joindate, workload, disposablefunds) VALUES ($1, $2, $3, $4, $5)
+INSERT INTO projectResearchers (projectid, researcherid, joindate, workload) VALUES ($1, $2, $3, $4)
 `
 
 type LinkProjectResearcherParams struct {
-	Projectid       int32
-	Researcherid    int32
-	Joindate        time.Time
-	Workload        float64
-	Disposablefunds float64
+	Projectid    int32
+	Researcherid int32
+	Joindate     string
+	Workload     string
 }
 
 // ProjectResearcher
@@ -143,7 +179,6 @@ func (q *Queries) LinkProjectResearcher(ctx context.Context, arg LinkProjectRese
 		arg.Researcherid,
 		arg.Joindate,
 		arg.Workload,
-		arg.Disposablefunds,
 	)
 	return err
 }
@@ -186,35 +221,22 @@ func (q *Queries) ListProjectAll(ctx context.Context) ([]Project, error) {
 }
 
 const listProjectResearcher = `-- name: ListProjectResearcher :many
-SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM researchers WHERE researcherid IN (SELECT researcherid FROM projectResearchers WHERE projectid = $1)
+SELECT researcherid FROM projectResearchers WHERE projectid = $1
 `
 
-func (q *Queries) ListProjectResearcher(ctx context.Context, projectid int32) ([]Researcher, error) {
+func (q *Queries) ListProjectResearcher(ctx context.Context, projectid int32) ([]int32, error) {
 	rows, err := q.db.QueryContext(ctx, listProjectResearcher, projectid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Researcher
+	var items []int32
 	for rows.Next() {
-		var i Researcher
-		if err := rows.Scan(
-			&i.Researcherid,
-			&i.LabID,
-			&i.ResearcherNumber,
-			&i.Name,
-			&i.Gender,
-			&i.Title,
-			&i.Age,
-			&i.Emailaddress,
-			&i.Leader,
-			&i.Startdate,
-			&i.Term,
-			&i.Researchdirection,
-		); err != nil {
+		var researcherid int32
+		if err := rows.Scan(&researcherid); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, researcherid)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

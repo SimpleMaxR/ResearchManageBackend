@@ -138,6 +138,30 @@ func (q *Queries) ListResearcherAll(ctx context.Context) ([]Researcher, error) {
 	return items, nil
 }
 
+const listResearcherByID = `-- name: ListResearcherByID :one
+SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE ResearcherID = $1
+`
+
+func (q *Queries) ListResearcherByID(ctx context.Context, researcherid int32) (Researcher, error) {
+	row := q.db.QueryRowContext(ctx, listResearcherByID, researcherid)
+	var i Researcher
+	err := row.Scan(
+		&i.Researcherid,
+		&i.LabID,
+		&i.ResearcherNumber,
+		&i.Name,
+		&i.Gender,
+		&i.Title,
+		&i.Age,
+		&i.Emailaddress,
+		&i.Leader,
+		&i.Startdate,
+		&i.Term,
+		&i.Researchdirection,
+	)
+	return i, err
+}
+
 const listResearcherByLab = `-- name: ListResearcherByLab :many
 SELECT researcherid, lab_id, researcher_number, name, gender, title, age, emailaddress, leader, startdate, term, researchdirection FROM Researchers WHERE lab_id = $1
 `

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"ResearchManage/internal/database"
+	"database/sql"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -55,6 +56,39 @@ func (apiCfg *apiConfig) HandlerListLabByLabID(c *gin.Context) {
 	// 返回数据
 	c.JSON(http.StatusOK, gin.H{
 		"labInfo": labInfo,
+	})
+}
+
+func (apiCfg *apiConfig) HandlerListLabByName(c *gin.Context) {
+	var (
+		err  error
+		name string
+	)
+
+	// 获取参数
+	name, exist := c.GetQuery("name")
+	if exist == false {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 查询数据库
+	lab, err := apiCfg.DB.ListLabByName(c.Request.Context(), sql.NullString{
+		String: name,
+		Valid:  exist,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 返回数据
+	c.JSON(http.StatusOK, gin.H{
+		"data": lab,
 	})
 }
 

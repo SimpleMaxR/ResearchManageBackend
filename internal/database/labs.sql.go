@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createLab = `-- name: CreateLab :one
@@ -157,6 +158,39 @@ func (q *Queries) ListLabById(ctx context.Context, labID int32) (Laboratory, err
 		&i.ResearchDirection,
 	)
 	return i, err
+}
+
+const listLabByName = `-- name: ListLabByName :many
+SELECT lab_id, name, office_area, address, research_direction FROM Laboratories WHERE Name LIKE '%' || $1 || '%'
+`
+
+func (q *Queries) ListLabByName(ctx context.Context, dollar_1 sql.NullString) ([]Laboratory, error) {
+	rows, err := q.db.QueryContext(ctx, listLabByName, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Laboratory
+	for rows.Next() {
+		var i Laboratory
+		if err := rows.Scan(
+			&i.LabID,
+			&i.Name,
+			&i.OfficeArea,
+			&i.Address,
+			&i.ResearchDirection,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listOfficeByLab = `-- name: ListOfficeByLab :one
